@@ -22,3 +22,5 @@ Suggests:
     spelling,
     testthat
 Language: en-US
+URL: https://github.com/wmoldham/IPO2
+BugReports: https://github.com/wmoldham/IPO2/issues
