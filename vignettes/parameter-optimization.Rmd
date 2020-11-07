@@ -1,0 +1,39 @@
+---
+title: "Parameter Optimization with IPO2"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{parameter-optimization}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+# libraries
+load_all()
+library(xcms)
+# library(IPO2)
+
+# parallel processing
+register(MulticoreParam(workers = parallel::detectCores() - 1))
+```
+
+# Data Import
+
+```{r}
+files <- 
+  list.files(
+    system.file("extdata", package = "IPO2"), 
+    pattern = "01|02", 
+    full.names = TRUE
+  )
+raw_data <- MSnbase::readMSData(files = files, mode = "onDisk")
+raw_data <- MSnbase::filterRt(raw_data, rt = c(100, 200))
+```
+

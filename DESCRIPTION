@@ -20,9 +20,16 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.1
 Suggests: 
     spelling,
-    testthat
+    testthat,
+    knitr,
+    rmarkdown
 Language: en-US
 URL: https://github.com/wmoldham/IPO2
 BugReports: https://github.com/wmoldham/IPO2/issues
 Imports: 
-    xcms
+    xcms,
+    rsm,
+    data.table,
+    purrr,
+    BiocParallel
+VignetteBuilder: knitr
