@@ -22,7 +22,7 @@ optimize_centwave <- function(
   }
 
   # check log file
-  if (file.exists(log_file)) {
+  if (!is.null(log_file) && file.exists(log_file)) {
     log_file <- paste0(log_file, format(Sys.time(), "_%Y-%m-%d_%H:%M:%S"))
   }
 
@@ -53,7 +53,7 @@ optimize_centwave <- function(
       )
 
     # run xcms for each experiment
-    redo <- FALSE
+    redo <- TRUE
     test <- 1
     l <- list()
     while(redo & test <= 5) {
@@ -64,9 +64,15 @@ optimize_centwave <- function(
             raw_data,
             param = x,
             BPPARAM = BiocParallel::SerialParam(),
-            BPREDO = l
           )
-        }
+        },
+        BPREDO = l
+      )
+      errs <- sum(bpok(xcmsnexp) == FALSE)
+      cat(
+        "Iteration: ", iteration,
+        "     Errors: ", errs,
+        "     Test: ", test
       )
       redo <- sum(bpok(xcmsnexp) == FALSE) > 0
       if (redo) {
@@ -153,7 +159,7 @@ optimize_centwave <- function(
     if (iteration == 1) {
       better <- TRUE
     } else {
-      better <- history[[iterator]][["score"]] > history[[iterator - 1]][["score"]]
+      better <- history[[iteration]][["score"]] > history[[iteration - 1]][["score"]]
     }
 
     # adjust intervals
