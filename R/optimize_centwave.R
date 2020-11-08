@@ -22,9 +22,13 @@ optimize_centwave <- function(
   }
 
   # check log file
-  # if (!is.null(log_file) && file.exists(log_file)) {
-  #   log_file <- paste0(log_file, format(Sys.time(), "_%Y-%m-%d_%H:%M:%S"))
-  # }
+  if (!is.null(log_file) && file.exists(log_file)) {
+    log_file <- paste0(
+      dirname(log_file),
+      format(Sys.time(), "/%Y-%m-%d_%H:%M:%S_"),
+      basename(log_file)
+    )
+  }
   if (!is.null(log_file)) {
     sink(log_file, append = TRUE, type = "output")
   }
@@ -75,8 +79,8 @@ optimize_centwave <- function(
       errs <- sum(bpok(xcmsnexp) == FALSE)
       cat(
         "Iteration: ", iteration,
-        "     Errors: ", errs,
         "     Test: ", test,
+        "     Errors: ", errs,
         "\n"
       )
       redo <- sum(bpok(xcmsnexp) == FALSE) > 0
