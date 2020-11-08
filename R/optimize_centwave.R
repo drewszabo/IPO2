@@ -10,15 +10,20 @@ optimize_centwave <- function(
   # check parameters
   check_centwave_params(parameter_list)
 
-  # create directories
+  # create plot directory
+  pd <- paste0(plot_dir, "/centwave_contours/")
   if (!is.null(plot_dir)) {
-    dir.create(paste0(plot_dir, "/centwave_contour_"))
+    if (!dir.exists(plot_dir)) {
+      stop("The plot directory, ", plot_dir, "does not exist")
+    } else if (!dir.exists(pd)) {
+      dir.create(pd)
+    }
   }
 
   # set up iteration loop
   history <- list()
   iteration <- 1
-  while(iteration <= 1) {
+  while(iteration <= 50) {
 
     message(
       format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
@@ -69,7 +74,7 @@ optimize_centwave <- function(
 
     # make plots
     if (!is.null(plot_dir)) {
-      plot_name <- paste0(plot_dir, "/centwave_contour_", iteration, ".png")
+      plot_name <- paste0(pd, "centwave_contour_", iteration, ".png")
       plot_contours(design, model, maximum, plot_name)
     }
 
@@ -364,7 +369,9 @@ get_maximum <- function(design, model) {
 plot_contours <- function(design, model, maximum, plot_name) {
 
   # make formula
-  form <- as.formula(c("~ ", paste(colnames(design), collapse = " + ")))
+  form <- as.formula(
+    paste("~ ", paste(colnames(design), collapse = " + "))
+  )
 
   # set plotting area
   number_params <- 1:8
