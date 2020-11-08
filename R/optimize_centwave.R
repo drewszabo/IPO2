@@ -4,6 +4,7 @@ optimize_centwave <- function(
   raw_data = NULL,
   parameter_list = suggest_centwave_params(),
   bpparam = BiocParallel::bpparam(),
+  log_file = NULL,
   plot_dir = NULL
 ) {
 
@@ -49,11 +50,28 @@ optimize_centwave <- function(
     # run xcms for each experiment
     xcmsnexp <-
       BiocParallel::bplapply(
-        cwp, function(x) {
-          xcms::findChromPeaks(
-            raw_data,
-            param = x,
-            BPPARAM = BiocParallel::SerialParam())
+        seq_along(cwp),
+        function(x) {
+          is_try_error <- TRUE
+          j <- 1
+          while(is_try_error & j <= 5) {
+            xcmsnexp_trial <- try(
+              xcms::findChromPeaks(
+                raw_data,
+                param = cwp[[x]],
+                BPPARAM = BiocParallel::SerialParam())
+            )
+            is_try_error <- test_try_error(xcmsnexp_trial)
+            if (!is.null(log_file)) {
+              sink(log_file, append = TRUE, type = "output")
+              cat("Iteration:", sprintf("%02d", iteration),
+                  "   CWP:", sprintf("%02d", x),
+                  "   Attempt:", j,
+                  "   Try error:", is_try_error, "\n")
+            }
+            j <- j + 1
+          }
+          xcmsnexp_trial
         }
       )
 
