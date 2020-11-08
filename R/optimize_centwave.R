@@ -48,7 +48,14 @@ optimize_centwave <- function(
         }
       )
 
-    ## score experiment
+    # score experiment
+    score <-
+      rbindlist(
+        BiocParallel::bplapply(
+          xcmsnexp,
+          score_peaks
+        )
+      )
 
     ## calculate model
 
@@ -69,7 +76,7 @@ optimize_centwave <- function(
 
   # output results
   return(
-    xcmsnexp
+    score
   )
 
 }
