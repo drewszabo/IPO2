@@ -21,6 +21,11 @@ optimize_centwave <- function(
     }
   }
 
+  # check log file
+  if (file.exists(log_file)) {
+    log_file <- paste0(log_file, format(Sys.time(), "_%Y-%m-%d_%H:%M:%S"))
+  }
+
   # set up iteration loop
   history <- list()
   iteration <- 1
@@ -48,32 +53,54 @@ optimize_centwave <- function(
       )
 
     # run xcms for each experiment
-    xcmsnexp <-
-      BiocParallel::bplapply(
-        seq_along(cwp),
+    redo <- FALSE
+    test <- 1
+    l <- list()
+    while(redo & test <= 5) {
+      xcmsnexp <- BiocParallel::bplapply(
+        cwp,
         function(x) {
-          is_try_error <- TRUE
-          j <- 1
-          while(is_try_error & j <= 5) {
-            xcmsnexp_trial <- try(
-              xcms::findChromPeaks(
-                raw_data,
-                param = cwp[[x]],
-                BPPARAM = BiocParallel::SerialParam())
-            )
-            is_try_error <- test_try_error(xcmsnexp_trial)
-            if (!is.null(log_file)) {
-              sink(log_file, append = TRUE, type = "output")
-              cat("Iteration:", sprintf("%02d", iteration),
-                  "   CWP:", sprintf("%02d", x),
-                  "   Attempt:", j,
-                  "   Try error:", is_try_error, "\n")
-            }
-            j <- j + 1
-          }
-          xcmsnexp_trial
+          xcms::findChromPeaks(
+            raw_data,
+            param = x,
+            BPPARAM = BiocParallel::SerialParam(),
+            BPREDO = l
+          )
         }
       )
+      redo <- sum(bpok(xcmsnexp) == FALSE) > 0
+      if (redo) {
+        l <- xcmsnexp
+      }
+      test <- test + 1
+    }
+
+    # xcmsnexp <-
+    #   BiocParallel::bplapply(
+    #     seq_along(cwp),
+    #     function(x) {
+    #       is_try_error <- TRUE
+    #       j <- 1
+    #       while(is_try_error & j <= 5) {
+    #         xcmsnexp_trial <- try(
+    #           xcms::findChromPeaks(
+    #             raw_data,
+    #             param = cwp[[x]],
+    #             BPPARAM = BiocParallel::SerialParam())
+    #         )
+    #         is_try_error <- test_try_error(xcmsnexp_trial)
+    #         if (!is.null(log_file)) {
+    #           sink(log_file, append = TRUE, type = "output")
+    #           cat("Iteration:", sprintf("%02d", iteration),
+    #               "   CWP:", sprintf("%02d", x),
+    #               "   Attempt:", j,
+    #               "   Try error:", is_try_error, "\n")
+    #         }
+    #         j <- j + 1
+    #       }
+    #       xcmsnexp_trial
+    #     }
+    #   )
 
     # score experiment
     score <-
