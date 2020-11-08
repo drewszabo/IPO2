@@ -34,6 +34,13 @@ files <-
     full.names = TRUE
   )
 raw_data <- MSnbase::readMSData(files = files, mode = "onDisk")
-raw_data <- MSnbase::filterRt(raw_data, rt = c(100, 200))
+raw_data <- MSnbase::filterRt(raw_data, rt = c(75, 1000))
 ```
+
+# Optimize Peak Picking
+
+```{r}
+a <- optimize_centwave(raw_data = raw_data, plot_dir = "scratch")
+```
+
 

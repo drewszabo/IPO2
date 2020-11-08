@@ -4,12 +4,16 @@ optimize_centwave <- function(
   raw_data = NULL,
   parameter_list = suggest_centwave_params(),
   bpparam = BiocParallel::bpparam(),
-  log_file = NULL,
   plot_dir = NULL
 ) {
 
   # check parameters
   check_centwave_params(parameter_list)
+
+  # create directories
+  if (!is.null(plot_dir)) {
+    dir.create(paste0(plot_dir, "/centwave_contour_"))
+  }
 
   # set up iteration loop
   history <- list()
@@ -57,17 +61,58 @@ optimize_centwave <- function(
         )
       )
 
-    ## calculate model
+    # calculate model
+    model <- create_model(design, score)
 
-    ## find best parameters
+    # find best parameters
+    maximum <- get_maximum(design, model)
 
-    ## score best parameters
+    # make plots
+    if (!is.null(plot_dir)) {
+      plot_name <- paste0(plot_dir, "/centwave_contour_", iteration, ".png")
+      plot_contours(design, model, maximum, plot_name)
+    }
 
-    ## assign to history
+    # score best parameters
+    matched_row <- design[as.list(maximum), on = names(maximum), which = TRUE]
 
-    ## make sure is improved
+    if(!is.na(matched_row)) {
+      max_score <- score[matched_row, ]
+      max_cwp <- cwp[matched_row]
+    } else {
+      max_cwp <- purrr::pmap(
+        c(maximum, parameters$constant),
+        make_cwp,
+        roiList = parameters$lists$roiList,
+        roiScales = parameters$lists$roiScales
+      )
+      max_xcmsnexp <- xcms::findChromPeaks(raw_data, param = max_cwp[[1]])
+      max_score <- score_peaks(max_xcmsnexp)
+    }
 
-    ## adjust intervals
+    # assign to history
+    history[[iteration]] <-
+      cbind(
+        t(unlist(parameters$to_optimize)),
+        cwp = max_cwp,
+        t(maximum),
+        max_score
+      )
+
+    # check for improvement
+    if (iteration == 1) {
+      better <- TRUE
+    } else {
+      better <- history[[iterator]][["score"]] > history[[iterator - 1]][["score"]]
+    }
+
+    # adjust intervals
+    if (better) {
+      new_parameters <- pick_parameters(parameters$to_optimize, maximum)
+      parameter_list[names(new_parameters)] <- new_parameters
+    } else {
+      break
+    }
 
     # increase counter
     iteration <- iteration + 1
@@ -75,9 +120,10 @@ optimize_centwave <- function(
   }
 
   # output results
-  return(
-    score
-  )
+  history <- rbindlist(history)
+  best_params <- history[score == max(score), cwp]
+  cat(best_params)
+  list(history = history, best_params = best_params)
 
 }
 
@@ -185,9 +231,13 @@ check_centwave_params <- function(parameter_list) {
 
   # check ranges
   for (nm in nms){
-    if (nm %in% c("ppm", "min_peakwidth", "max_peakwidth")) {
+    if (nm %in% c("ppm")) {
       if (min(parameter_list[[nm]]) <= 0) {
         stop(paste("The parameter", nm, "must be greater than 0"))
+      }
+    } else if (nm %in% c("min_peakwidth", "max_peakwidth")) {
+      if (min(parameter_list[[nm]]) <= 3) {
+        stop(paste("The parameter", nm, "must be greater than 3"))
       }
     } else if (nm %in% c("snthresh", "prefilter_k", "prefilter_int", "noise")) {
       if (min(parameter_list[[nm]]) < 0) {
@@ -271,4 +321,107 @@ make_cwp <- function(
     peakwidth = c(min_peakwidth, max_peakwidth),
     prefilter = c(prefilter_k, prefilter_int),
     ...)
+}
+
+
+create_model <- function(design, score) {
+
+  params <- paste0(colnames(design), collapse = ", ")
+  design <- cbind(design, score = score$score)
+
+  if(ncol(design) > 1) {
+    formula <- as.formula(paste0("score ~ SO(", params, ")"))
+    model <- rsm::rsm(formula, data = design)
+  } else {
+    formula <- as.formula(paste("score ~", params, "+", params, "^ 2"))
+    model <- lm(formula, data = design)
+  }
+
+  model
+
+}
+
+
+get_maximum <- function(design, model) {
+
+  number_params <- ncol(design)
+  steps <- ceiling(1E6 ^ (1/number_params))
+
+  param_values <- list()
+  for (nm in names(design)) {
+    minimum <- min(design[[nm]])
+    maximum <- max(design[[nm]])
+    param_values[[nm]] <- seq(minimum, maximum, length.out = steps)
+  }
+
+  search_grid <- do.call(CJ, param_values)
+  max_value <- predict(model, search_grid)
+  unlist(search_grid[max_value == max(max_value), ][1, ])
+
+}
+
+
+plot_contours <- function(design, model, maximum, plot_name) {
+
+  # make formula
+  form <- as.formula(c("~ ", paste(colnames(design), collapse = " + ")))
+
+  # set plotting area
+  number_params <- 1:8
+  number_pairs <- number_params * (number_params - 1) / 2
+  number_columns <- c(1, 1, 1, 2, 2, 3, 3, 4)
+  number_rows <- number_pairs / number_columns
+
+  png(
+    plot_name,
+    width = 7.5,
+    height = 10,
+    units = "in",
+    res = 300
+  )
+
+  params <- ncol(design)
+  cols <- number_columns[which(number_params == params)]
+  rows <- number_rows[which(number_params == params)]
+  par(mfrow = c(rows, cols))
+
+  # plot
+  contour(model, form = form, image = TRUE, at = maximum)
+  dev.off()
+
+}
+
+
+pick_parameters <- function(parameters, maximum) {
+
+  radius <- purrr::map_dbl(parameters, ~diff(.x) / 2)
+  params <- list()
+
+  for (nm in names(parameters)) {
+
+    if (min(parameters[[nm]]) == maximum[nm]) {
+      upper <- maximum[nm] + 1.2 * radius[nm]
+      lower <- maximum[nm] - 1.2 * radius[nm]
+    } else if (max(parameters[[nm]]) == maximum[nm]) {
+      lower <- maximum[nm] - 1.2 * radius[nm]
+      upper <- maximum[nm] + 1.2 * radius[nm]
+    } else {
+      lower <- maximum[nm] - radius[nm] * 0.8
+      upper <- maximum[nm] + radius[nm] * 0.8
+    }
+
+    if (nm %in% c("ppm")) {
+      lower <- max(1, lower)
+    } else if (nm %in% c("min_peakwidth", "max_peakwidth")) {
+      lower <- max(3, lower)
+    } else if (nm %in% c("snthresh", "noise", "prefilter_k", "prefilter_int")) {
+      lower <- max(0, lower)
+    }
+
+    params[[nm]] <- unique(c(lower, upper))  # stop optimizing if converge
+
+  }
+
+  params
+
 }
