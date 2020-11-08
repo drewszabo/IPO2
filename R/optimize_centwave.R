@@ -22,8 +22,11 @@ optimize_centwave <- function(
   }
 
   # check log file
-  if (!is.null(log_file) && file.exists(log_file)) {
-    log_file <- paste0(log_file, format(Sys.time(), "_%Y-%m-%d_%H:%M:%S"))
+  # if (!is.null(log_file) && file.exists(log_file)) {
+  #   log_file <- paste0(log_file, format(Sys.time(), "_%Y-%m-%d_%H:%M:%S"))
+  # }
+  if (!is.null(log_file)) {
+    sink(log_file, append = TRUE, type = "output")
   }
 
   # set up iteration loop
@@ -31,10 +34,11 @@ optimize_centwave <- function(
   iteration <- 1
   while(iteration <= 50) {
 
-    message(
+    cat(
       format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
       " : Starting iteration ",
-      iteration
+      iteration,
+      "\n"
     )
 
     # parse parameters
@@ -55,7 +59,7 @@ optimize_centwave <- function(
     # run xcms for each experiment
     redo <- TRUE
     test <- 1
-    l <- list()
+    redo_list <- list()
     while(redo & test <= 5) {
       xcmsnexp <- BiocParallel::bplapply(
         cwp,
@@ -66,17 +70,18 @@ optimize_centwave <- function(
             BPPARAM = BiocParallel::SerialParam(),
           )
         },
-        BPREDO = l
+        BPREDO = redo_list
       )
       errs <- sum(bpok(xcmsnexp) == FALSE)
       cat(
         "Iteration: ", iteration,
         "     Errors: ", errs,
-        "     Test: ", test
+        "     Test: ", test,
+        "\n"
       )
       redo <- sum(bpok(xcmsnexp) == FALSE) > 0
       if (redo) {
-        l <- xcmsnexp
+        redo_list <- xcmsnexp
       }
       test <- test + 1
     }
@@ -210,9 +215,9 @@ suggest_centwave_params <- function() {
     ppm                = c(17, 32),
     min_peakwidth      = c(12, 28),
     max_peakwidth      = c(35, 65),
-    snthresh           = 100,  # originally 10, increase to increase speed
+    snthresh           = 10,  # originally 10, increase to increase speed
     prefilter_k        = 3,
-    prefilter_int      = 1000,  # originally 100
+    prefilter_int      = 100,  # originally 100
     mzdiff             = c(-0.001, 0.01),
     noise              = 0  # originally 0, increase to increase speed
   )
