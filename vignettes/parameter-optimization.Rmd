@@ -16,9 +16,11 @@ knitr::opts_chunk$set(
 
 ```{r setup}
 # libraries
-devtools::load_all()
-library(xcms)
-# library(IPO2)
+suppressPackageStartupMessages({
+  devtools::load_all()
+  library(xcms)
+  # library(IPO2)
+})
 
 # parallel processing
 doParallel::registerDoParallel(parallel::detectCores() - 1)
