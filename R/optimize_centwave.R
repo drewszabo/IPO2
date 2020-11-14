@@ -62,9 +62,9 @@ optimize_centwave <- function(
 
     # run xcms for each experiment
     redo <- TRUE
-    test <- 1
+    trial <- 1
     redo_list <- list()
-    while(redo & test <= 5) {
+    while(redo & trial <= 5) {
       xcmsnexp <- BiocParallel::bplapply(
         cwp,
         function(x) {
@@ -78,8 +78,8 @@ optimize_centwave <- function(
       )
       errs <- sum(bpok(xcmsnexp) == FALSE)
       cat(
-        "Iteration:", iteration,
-        "     Test:", test,
+        "Iteration:", sprintf("%02d", iteration),
+        "     trial:", trial,
         "     Errors:", errs,
         "\n"
       )
@@ -87,35 +87,8 @@ optimize_centwave <- function(
       if (redo) {
         redo_list <- xcmsnexp
       }
-      test <- test + 1
+      trial <- trial + 1
     }
-
-    # xcmsnexp <-
-    #   BiocParallel::bplapply(
-    #     seq_along(cwp),
-    #     function(x) {
-    #       is_try_error <- TRUE
-    #       j <- 1
-    #       while(is_try_error & j <= 5) {
-    #         xcmsnexp_trial <- try(
-    #           xcms::findChromPeaks(
-    #             raw_data,
-    #             param = cwp[[x]],
-    #             BPPARAM = BiocParallel::SerialParam())
-    #         )
-    #         is_try_error <- test_try_error(xcmsnexp_trial)
-    #         if (!is.null(log_file)) {
-    #           sink(log_file, append = TRUE, type = "output")
-    #           cat("Iteration:", sprintf("%02d", iteration),
-    #               "   CWP:", sprintf("%02d", x),
-    #               "   Attempt:", j,
-    #               "   Try error:", is_try_error, "\n")
-    #         }
-    #         j <- j + 1
-    #       }
-    #       xcmsnexp_trial
-    #     }
-    #   )
 
     # score experiment
     score <-
@@ -222,7 +195,7 @@ suggest_centwave_params <- function() {
     max_peakwidth      = c(35, 65),
     snthresh           = 10,  # originally 10, increase to increase speed
     prefilter_k        = 3,
-    prefilter_int      = 100,  # originally 100
+    prefilter_int      = 10000,  # originally 100
     mzdiff             = c(-0.001, 0.01),
     noise              = 0  # originally 0, increase to increase speed
   )
@@ -462,20 +435,24 @@ plot_contours <- function(design, model, maximum, plot_name) {
 
 pick_parameters <- function(parameters, maximum) {
 
-  radius <- purrr::map_dbl(parameters, ~diff(.x) / 2)
+  width <- purrr::map_dbl(parameters, diff)
+  delta <- purrr::map2(parameters, as.list(maximum), ~abs(.x - .y))
   params <- list()
 
   for (nm in names(parameters)) {
 
-    if (min(parameters[[nm]]) == maximum[nm]) {
-      upper <- maximum[nm] + 1.2 * radius[nm]
-      lower <- maximum[nm] - 1.2 * radius[nm]
-    } else if (max(parameters[[nm]]) == maximum[nm]) {
-      lower <- maximum[nm] - 1.2 * radius[nm]
-      upper <- maximum[nm] + 1.2 * radius[nm]
+    if (sum(delta[[nm]] == 0) > 0) {
+      width[[nm]] <- width[[nm]] * 1.2
     } else {
-      lower <- maximum[nm] - radius[nm] * 0.8
-      upper <- maximum[nm] + radius[nm] * 0.8
+      width[[nm]] <- width[[nm]] * 0.8
+    }
+
+    if (delta[[nm]][[1]] < delta[[nm]][[2]]) {
+      upper <- maximum[[nm]] + 0.05 * width[[nm]]
+      lower <- maximum[[nm]] - 0.95 * width[[nm]]
+    } else {
+      upper <- maximum[[nm]] + 0.95 * width[[nm]]
+      lower <- maximum[[nm]] - 0.05 * width[[nm]]
     }
 
     if (nm %in% c("ppm")) {
@@ -490,6 +467,17 @@ pick_parameters <- function(parameters, maximum) {
 
   }
 
-  params
+  rounding <- list(
+    ppm = 2,
+    min_peakwidth = 0,
+    max_peakwidth = 0,
+    snthresh = 0,
+    noise = 0,
+    prefilter_k = 0,
+    prefilter_int = 0,
+    mzdiff = 3
+  )
+
+  purrr::imap(params, ~round(.x, digits = rounding[[.y]]))
 
 }
