@@ -40,7 +40,7 @@ optimize_centwave <- function(
 
     cat(
       format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
-      " : Starting iteration ",
+      ": Starting iteration ",
       iteration,
       "\n"
     )
@@ -78,9 +78,9 @@ optimize_centwave <- function(
       )
       errs <- sum(bpok(xcmsnexp) == FALSE)
       cat(
-        "Iteration: ", iteration,
-        "     Test: ", test,
-        "     Errors: ", errs,
+        "Iteration:", iteration,
+        "     Test:", test,
+        "     Errors:", errs,
         "\n"
       )
       redo <- sum(bpok(xcmsnexp) == FALSE) > 0
@@ -134,7 +134,8 @@ optimize_centwave <- function(
 
     # make plots
     if (!is.null(plot_dir)) {
-      plot_name <- paste0(pd, "centwave_contour_", iteration, ".png")
+      plot_name <-
+        paste0(pd, "centwave_contour_", sprintf("%02d", iteration), ".png")
       plot_contours(design, model, maximum, plot_name)
     }
 
