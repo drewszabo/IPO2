@@ -16,18 +16,13 @@ knitr::opts_chunk$set(
 
 ```{r setup}
 # libraries
-load_all()
+devtools::load_all()
 library(xcms)
 # library(IPO2)
 
 # parallel processing
 doParallel::registerDoParallel(parallel::detectCores() - 1)
 register(BiocParallel::DoparParam(stop.on.error = FALSE))
-
-# register(MulticoreParam(
-#   workers = parallel::detectCores() - 1, 
-#   stop.on.error = FALSE
-# ))
 ```
 
 # Data Import
@@ -39,6 +34,7 @@ files <-
     pattern = "01|02", 
     full.names = TRUE
   )
+
 raw_data <- MSnbase::readMSData(files = files, mode = "onDisk")
 ```
 
