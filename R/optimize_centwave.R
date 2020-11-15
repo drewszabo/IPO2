@@ -30,6 +30,7 @@ optimize_centwave <- function(
   }
   if (!is.null(log_file)) {
     sink(log_file, append = TRUE, type = "output")
+    on.exit(sink(), add = TRUE, after = TRUE)
   }
 
   # set up iteration loop
@@ -162,7 +163,6 @@ optimize_centwave <- function(
   # output results
   history <- rbindlist(history)
   best_params <- history[score == max(score), cwp]
-  cat(best_params)
   list(history = history, best_params = best_params)
 
 }
