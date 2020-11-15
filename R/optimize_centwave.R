@@ -105,6 +105,7 @@ optimize_centwave <- function(
 
     # find best parameters
     maximum <- get_maximum(design, model)
+    cat("Maximum value\n", maximum)
 
     # make plots
     if (!is.null(plot_dir)) {
@@ -149,6 +150,7 @@ optimize_centwave <- function(
     # adjust intervals
     if (better) {
       new_parameters <- pick_parameters(parameters$to_optimize, maximum)
+      cat("New parameters\n", new_parameters)
       parameter_list[names(new_parameters)] <- new_parameters
     } else {
       break
@@ -443,18 +445,13 @@ pick_parameters <- function(parameters, maximum) {
   for (nm in names(parameters)) {
 
     if (sum(delta[[nm]] == 0) > 0) {
-      width[[nm]] <- width[[nm]] * 1.2
+      width[[nm]] <- width[[nm]] * 1.4
     } else {
       width[[nm]] <- width[[nm]] * 0.8
     }
 
-    if (delta[[nm]][[1]] < delta[[nm]][[2]]) {
-      upper <- maximum[[nm]] + 0.05 * width[[nm]]
-      lower <- maximum[[nm]] - 0.95 * width[[nm]]
-    } else {
-      upper <- maximum[[nm]] + 0.95 * width[[nm]]
-      lower <- maximum[[nm]] - 0.05 * width[[nm]]
-    }
+    upper <- maximum[[nm]] + 0.5 * width[[nm]]
+    lower <- maximum[[nm]] - 0.5 * width[[nm]]
 
     if (nm %in% c("ppm")) {
       lower <- max(1, lower)
