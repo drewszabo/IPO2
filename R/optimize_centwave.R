@@ -105,7 +105,6 @@ optimize_centwave <- function(
 
     # find best parameters
     maximum <- get_maximum(design, model)
-    cat("Maximum value\n", maximum)
 
     # make plots
     if (!is.null(plot_dir)) {
@@ -150,7 +149,6 @@ optimize_centwave <- function(
     # adjust intervals
     if (better) {
       new_parameters <- pick_parameters(parameters$to_optimize, maximum)
-      cat("New parameters\n", new_parameters)
       parameter_list[names(new_parameters)] <- new_parameters
     } else {
       break
@@ -467,13 +465,13 @@ pick_parameters <- function(parameters, maximum) {
 
   rounding <- list(
     ppm = 2,
-    min_peakwidth = 0,
-    max_peakwidth = 0,
+    min_peakwidth = 2,
+    max_peakwidth = 2,
     snthresh = 0,
     noise = 0,
     prefilter_k = 0,
     prefilter_int = 0,
-    mzdiff = 3
+    mzdiff = 4
   )
 
   purrr::imap(params, ~round(.x, digits = rounding[[.y]]))
