@@ -3,7 +3,6 @@
 optimize_centwave <- function(
   raw_data = NULL,
   parameter_list = suggest_centwave_params(),
-  bpparam = BiocParallel::bpparam(),
   log_file = NULL,
   plot_dir = NULL
 ) {
@@ -65,16 +64,18 @@ optimize_centwave <- function(
     trial <- 1
     redo_list <- list()
     while(redo & trial <= 5) {
-      xcmsnexp <- BiocParallel::bplapply(
-        cwp,
-        function(x) {
-          xcms::findChromPeaks(
-            raw_data,
-            param = x,
-            BPPARAM = BiocParallel::SerialParam(),
-          )
-        },
-        BPREDO = redo_list
+      xcmsnexp <- BiocParallel::bptry(
+        BiocParallel::bplapply(
+          cwp,
+          function(x) {
+            xcms::findChromPeaks(
+              raw_data,
+              param = x,
+              BPPARAM = BiocParallel::SerialParam(),
+            )
+          },
+          BPREDO = redo_list
+        )
       )
       errs <- sum(bpok(xcmsnexp) == FALSE)
       cat(
@@ -83,11 +84,11 @@ optimize_centwave <- function(
         "     Errors:", errs,
         "\n"
       )
-      redo <- sum(bpok(xcmsnexp) == FALSE) > 0
+      redo <- errs > 0
       if (redo) {
         redo_list <- xcmsnexp
+        trial <- trial + 1
       }
-      trial <- trial + 1
     }
 
     # score experiment
