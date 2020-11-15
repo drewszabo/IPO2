@@ -2,7 +2,7 @@
 local({
 
   # the requested version of renv
-  version <- "0.12.2-3"
+  version <- "0.12.2-15"
 
   # the project directory
   project <- getwd()
@@ -269,8 +269,11 @@ local({
       return(path)
   
     path <- Sys.getenv("RENV_PATHS_LIBRARY_ROOT", unset = NA)
-    if (!is.na(path))
-      return(file.path(path, basename(project)))
+    if (!is.na(path)) {
+      id <- substring(renv_bootstrap_hash_text(project), 1L, 8L)
+      name <- paste(basename(project), id, sep = "-")
+      return(file.path(path, name))
+    }
   
     file.path(project, "renv/library")
   
@@ -304,6 +307,16 @@ local({
   
   }
   
+  renv_bootstrap_hash_text <- function(text) {
+  
+    hashfile <- tempfile("renv-hash-")
+    on.exit(unlink(hashfile), add = TRUE)
+  
+    writeLines(text, con = hashfile)
+    tools::md5sum(hashfile)
+  
+  }
+  
   renv_bootstrap_load <- function(project, libpath, version) {
   
     # try to load renv from the project library
@@ -333,8 +346,13 @@ local({
   if (renv_bootstrap_load(project, libpath, version))
     return(TRUE)
 
-  # load failed; attempt to bootstrap
-  message("Bootstrapping renv ", version, " ...")
+  # load failed; inform user we're about to bootstrap
+  prefix <- paste("# Bootstrapping renv", version)
+  postfix <- paste(rep.int("-", 77L - nchar(prefix)), collapse = "")
+  header <- paste(prefix, postfix)
+  message(header)
+
+  # perform bootstrap
   bootstrap(version, libpath)
 
   # exit early if we're just testing bootstrap
@@ -343,7 +361,7 @@ local({
 
   # try again to load
   if (requireNamespace("renv", lib.loc = libpath, quietly = TRUE)) {
-    message("Successfully installed and loaded renv ", version, ".")
+    message("* Successfully installed and loaded renv ", version, ".")
     return(renv::load())
   }
 
