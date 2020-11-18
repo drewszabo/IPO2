@@ -1,0 +1,84 @@
+---
+title: "Comparison with IPO"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{ipo-comparison}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+# libraries
+suppressPackageStartupMessages({
+  # library(IPO2)
+  devtools::load_all()
+  library(xcms)
+})
+
+# parallel processing
+doParallel::registerDoParallel(parallel::detectCores() - 1)
+register(BiocParallel::DoparParam(stop.on.error = FALSE))
+```
+
+# Introduction
+
+The goal of this vignette is to compare the results from IPO and IPO2 as well as to assess overall performance/efficiency.
+
+# Setup
+
+```{r}
+mzml_file <- file.path(find.package("msdata"), "microtofq/MM14.mzML")
+mzml_data <- MSnbase::readMSData(files = mzml_file, mode = "onDisk")
+```
+
+# IPO 
+
+```{r}
+ipo_params <- IPO::getDefaultXcmsSetStartingParams()
+ipo_params$mzdiff <- -0.001
+ipo_params$ppm <- 56
+ipo_params$min_peakwidth <- c(3, 9.5)
+ipo_params$max_peakwidth <- c(10, 20)
+
+bench::mark(
+  ipo_result <- 
+    IPO::optimizeXcmsSet(
+      mzml_file, 
+      ipo_params, 
+      subdir = system.file("scratch/ipo", package = "IPO2"), 
+      plot = TRUE, 
+      nSlaves = 0
+    )
+)
+```
+
+# IPO2
+
+```{r}
+ipo2_params <- IPO2:::suggest_centwave_params()
+ipo2_params$mzdiff <- -0.001
+ipo2_params$ppm <- 56
+ipo2_params$min_peakwidth <- c(3, 9.5)
+ipo2_params$max_peakwidth <- c(10, 20)
+ipo2_params$prefilter_int <- 100
+
+bench::mark(
+  ipo2_result <- 
+    IPO2::optimize_centwave(
+      raw_data = mzml_data, 
+      parameter_list = ipo2_params,
+      plot_dir = system.file("scratch/ipo2", package = "IPO2"), 
+      log_file = NULL
+    )
+)
+```
+
+
+
