@@ -32,12 +32,15 @@ register(BiocParallel::DoparParam(stop.on.error = FALSE))
 ```{r}
 files <- 
   list.files(
-    system.file("extdata", package = "IPO2"), 
-    pattern = "01|02", 
+    system.file("cdf", package = "faahKO"), 
+    pattern = "15", 
+    recursive = TRUE, 
     full.names = TRUE
   )
 
-raw_data <- MSnbase::readMSData(files = files, mode = "onDisk")
+raw_data <- 
+  MSnbase::readMSData(files = files, mode = "onDisk") %>% 
+  MSnbase::filterRt(c(2500, 3500))
 ```
 
 # Optimize Peak Picking
@@ -52,11 +55,14 @@ unlink(
   recursive = TRUE
 )
 
-a <- optimize_centwave(
-  raw_data = raw_data, 
-  plot_dir = system.file("scratch", package = "IPO2"), 
-  log_file = paste0(system.file("scratch", package = "IPO2"), "/log.txt")
-)
+
+
+cwp_params <- 
+  optimize_centwave(
+    raw_data = raw_data,
+    plot_dir = system.file("scratch", package = "IPO2"),
+    log_file = paste0(system.file("scratch", package = "IPO2"), "/log.txt")
+  )
 ```
 
 
