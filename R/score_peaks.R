@@ -39,7 +39,7 @@ score_peaks <- function(xcmsnexp) {
   a[
     , lapply(.SD, sum), .SDcols = c("total", "indeterminate", "isotopes")
   ][
-    , score := isotopes ^ 2 / (total - indeterminate)
+    , score := isotopes ^ 2 / (total - indeterminate - isotopes)
   ]
 }
 
