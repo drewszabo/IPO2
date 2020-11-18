@@ -9,6 +9,7 @@ vignette: >
 
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
+  message = FALSE, 
   collapse = TRUE,
   comment = "#>"
 )
@@ -54,8 +55,10 @@ bench::mark(
       ipo_params, 
       subdir = system.file("scratch/ipo", package = "IPO2"), 
       plot = TRUE, 
-      nSlaves = 0
-    )
+      nSlaves = 0, 
+      BPPARAM = bpparam()
+    ), 
+  memory = FALSE
 )
 ```
 
@@ -76,9 +79,26 @@ bench::mark(
       parameter_list = ipo2_params,
       plot_dir = system.file("scratch/ipo2", package = "IPO2"), 
       log_file = NULL
-    )
+    ), 
+  memory = FALSE
 )
 ```
 
+# Compare Results
 
+For this model fitting task, IPO2 is ~3 times faster. Both sessions complete the same number of iterations (2). The selected optimal parameters differ among the two approaches: 
+
+```{r}
+ipo_min <- ipo_result$best_settings$parameters$min_peakwidth
+ipo_max <- ipo_result$best_settings$parameters$max_peakwidth
+
+ipo2_min <- ipo2_result$history[score == max(score)]$min_peakwidth
+ipo2_max <- ipo2_result$history[score == max(score)]$max_peakwidth
+
+tibble::tribble(
+  ~package, ~min_peakwidth, ~max_peakwidth, 
+  "IPO", ipo_min, ipo_max, 
+  "IPO2", ipo2_min, ipo2_max
+)
+```
 
