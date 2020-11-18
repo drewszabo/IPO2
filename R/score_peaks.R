@@ -1,6 +1,17 @@
 score_peaks <- function(xcmsnexp) {
   peak_df <- data.table(xcms::chromPeaks(xcmsnexp), keep.rownames = TRUE)
 
+  if (nrow(peak_df) == 0) {
+    return(
+      data.table(
+        total = 0,
+        indeterminate = 0,
+        isotopes = 0,
+        score = 0
+      )
+    )
+  }
+
   a <-
     peak_df[
 
