@@ -82,8 +82,7 @@ find_isotopes <- function(peak_table) {
 
   # identify overlapping retention time windows
   rt_overlap <-
-    pmax(isotope_pairs$rtmin_1, isotope_pairs$rtmin_2) <
-    pmin(isotope_pairs$rtmax_1, isotope_pairs$rtmax_2)
+    abs(isotope_pairs$rt_1 - isotope_pairs$rt_2) / isotope_pairs$rt_1 < 0.005
 
   # confirm expected peak intensity ratios
   intb_ratio <- isotope_pairs$intb_2 / isotope_pairs$intb_1
