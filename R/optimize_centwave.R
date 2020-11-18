@@ -276,8 +276,8 @@ check_centwave_params <- function(parameter_list) {
         stop(paste("The parameter", nm, "must be greater than 0"))
       }
     } else if (nm %in% c("min_peakwidth", "max_peakwidth")) {
-      if (min(parameter_list[[nm]]) <= 3) {
-        stop(paste("The parameter", nm, "must be greater than 3"))
+      if (min(parameter_list[[nm]]) <= 0) {
+        stop(paste("The parameter", nm, "must be greater than 0"))
       }
     } else if (nm %in% c("snthresh", "prefilter_k", "prefilter_int", "noise")) {
       if (min(parameter_list[[nm]]) < 0) {
@@ -451,16 +451,22 @@ pick_parameters <- function(parameters, maximum) {
     upper <- maximum[[nm]] + 0.5 * width[[nm]]
     lower <- maximum[[nm]] - 0.5 * width[[nm]]
 
+    #set lower bounds
     if (nm %in% c("ppm")) {
-      lower <- max(1, lower)
+      lower <- max(0, lower)
     } else if (nm %in% c("min_peakwidth", "max_peakwidth")) {
-      lower <- max(3, lower)
+      lower <- max(0, lower)
     } else if (nm %in% c("snthresh", "noise", "prefilter_k", "prefilter_int")) {
       lower <- max(0, lower)
     }
 
     params[[nm]] <- unique(c(lower, upper))  # stop optimizing if converge
 
+  }
+
+  # prevent overlapping peakwidth optimization
+  if (max(params[["min_peakwidth"]] > min(params[["max_peakwidth"]]))) {
+    params[["max_peakwidth"]][[1]] <- params[["min_peakwidth"]][[2]]
   }
 
   rounding <- list(
