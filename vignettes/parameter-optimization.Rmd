@@ -33,12 +33,11 @@ register(BiocParallel::DoparParam(stop.on.error = FALSE))
 files <- 
   list.files(
     system.file("extdata", package = "IPO2"), 
-    pattern = "01", 
     full.names = TRUE
   )
 
 raw_data <- 
-  MSnbase::readMSData(files = files, mode = "onDisk") %>% 
+  MSnbase::readMSData(files = files[[1]], mode = "onDisk") %>% 
   MSnbase::filterRt(c(300, 900))
 ```
 
@@ -67,5 +66,23 @@ cwp_params <-
     rerun = FALSE
   )
 ```
+
+# Optimize Retention Time and Grouping
+
+```{r}
+raw_data <- 
+  MSnbase::readMSData(files = files[seq(1, 18, 3)], mode = "onDisk") %>% 
+  MSnbase::filterRt(c(300, 900))
+
+xcmsnexp <- 
+  xfun::cache_rds(
+    xcms::findChromPeaks(
+      raw_data,
+      param = cwp_params$best_params,
+      BPPARAM = BiocParallel::bpparam(),
+    )
+  )
+```
+
 
 
