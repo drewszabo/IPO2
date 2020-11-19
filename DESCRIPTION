@@ -25,7 +25,7 @@ Suggests:
     testthat,
     knitr,
     rmarkdown,
-    faahKO
+    xfun
 Language: en-US
 URL: https://github.com/wmoldham/IPO2
 BugReports: https://github.com/wmoldham/IPO2/issues
