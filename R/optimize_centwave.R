@@ -10,27 +10,16 @@ optimize_centwave <- function(
   # check parameters
   check_centwave_params(parameter_list)
 
-  # create plot directory
-  pd <- paste0(plot_dir, "/centwave_contours/")
-  if (!is.null(plot_dir)) {
-    if (!dir.exists(plot_dir)) {
-      stop("The plot directory, ", plot_dir, "does not exist")
-    } else if (!dir.exists(pd)) {
-      dir.create(pd)
-    }
-  }
-
-  # check log file
-  if (!is.null(log_file) && file.exists(log_file)) {
-    log_file <- paste0(
-      dirname(log_file),
-      format(Sys.time(), "/%Y-%m-%d_%H:%M:%S_"),
-      basename(log_file)
-    )
-  }
+  # log file
   if (!is.null(log_file)) {
+    log_file <- check_log_file(log_file)
     sink(log_file, append = TRUE, type = "output")
     on.exit(sink(), add = TRUE, after = TRUE)
+  }
+
+  # plot file
+  if (!is.null(plot_dir)) {
+    pd <- check_plot_dir(plot_dir, "centwave")
   }
 
   # set up iteration loop
@@ -46,7 +35,7 @@ optimize_centwave <- function(
     )
 
     # parse parameters
-    parameters <- parse_parameters(parameter_list)
+    parameters <- parse_parameters(parameter_list, "centwave")
 
     # design experiments
     design <- design_experiments(parameters)
@@ -203,7 +192,7 @@ suggest_centwave_params <- function() {
 }
 
 
-param_types <- function() {
+param_types_centwave <- function() {
 
   assign(
     "quant",
@@ -246,7 +235,7 @@ param_types <- function() {
 
 check_centwave_params <- function(parameter_list) {
 
-  param_types()
+  param_types_centwave()
 
   # check parameter names
   nms <- names(parameter_list)
@@ -257,7 +246,7 @@ check_centwave_params <- function(parameter_list) {
   }
 
   # check if too many parameters provided
-  lengths <- lapply(parameter_list[quant], length)
+  lengths <- lapply(parameter_list[nms %in% quant], length)
   bad_lengths <- names(lengths[lengths > 2])
   if (any(lengths > 2)) {
     stop("Too many parameters specified for: ",
@@ -286,19 +275,6 @@ check_centwave_params <- function(parameter_list) {
     }
   }
 }
-
-
-parse_parameters <- function(parameters) {
-  parameter_list <- get_centwave_defaults()
-  parameter_list[names(parameters)] <- parameters
-  param_types()
-  params <- list()
-  params$to_optimize <- parameter_list[quant][lapply(parameter_list[quant], length) == 2]
-  params$constant <- parameter_list[c(quant, qual)][lapply(parameter_list[c(quant, qual)], length) != 2]
-  params$lists <- parameter_list[lists]
-  params
-}
-
 
 generate_ccd <- function(parameters_to_optimize) {
 
