@@ -63,6 +63,7 @@ cwp_params <-
       plot_dir = system.file("scratch", package = "IPO2"),
       log_file = paste0(system.file("scratch", package = "IPO2"), "/log.txt")
     ), 
+    file = "cwp_params.rds",
     rerun = FALSE
   )
 ```
@@ -80,7 +81,9 @@ xcmsnexp <-
       raw_data,
       param = cwp_params$best_params,
       BPPARAM = BiocParallel::bpparam(),
-    )
+    ), 
+    file = "xcmsnexp.rds", 
+    rerun = FALSE
   )
 ```
 
