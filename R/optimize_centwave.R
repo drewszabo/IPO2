@@ -194,9 +194,9 @@ suggest_centwave_params <- function() {
     ppm                = c(17, 32),
     min_peakwidth      = c(12, 28),
     max_peakwidth      = c(35, 65),
-    snthresh           = 10,  # originally 10, increase to increase speed
+    snthresh           = 100,  # originally 10, increase to increase speed
     prefilter_k        = 3,
-    prefilter_int      = 100,  # originally 100
+    prefilter_int      = 1000,  # originally 100
     mzdiff             = c(-0.001, 0.01),
     noise              = 0  # originally 0, increase to increase speed
   )
