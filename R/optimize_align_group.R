@@ -14,6 +14,8 @@ optimize_align_group <- function(
 
   # check parameters
   check_align_group_params(parameter_list)
+  obi_params <- names(get_obiwarp_defaults())
+  density_params <- names(get_density_defaults())
 
   # log file
   if (!is.null(log_file)) {
@@ -43,6 +45,17 @@ optimize_align_group <- function(
     parameters <- parse_parameters(parameter_list, "align_group")
 
     # design experiments
+    design <- design_experiments(parameters)
+
+    # generate obiwarp parameters
+    params <- cbind(design, t(parameters$constant), t(parameters$lists))
+    params <- params[, colnames(params) %in% obi_params, with = FALSE]
+    setnames(params, "binSize_O", "binSize")
+    obi <-
+      purrr::pmap(
+        params,
+        xcms::ObiwarpParam
+      )
 
     # run alignment
 
@@ -73,7 +86,7 @@ optimize_align_group <- function(
 
 get_obiwarp_defaults <- function() {
   list(
-    binsize            = 1,
+    binSize_O          = 1,
     centerSample       = integer(),
     response           = 1L, # 0-100; 0 linear on ends, 100 uses all bijective anchors
     distFun            = "cor_opt",
@@ -94,20 +107,20 @@ get_density_defaults <- function() {
     bw                 = 30, # standard deviation of the smooth kernel to be used
     minFraction        = 0.5, # minimum fraction of samples in at least one sample group
     minSamples         = 1, # minimum number of samples in at least one group
-    binSize            = 0.25, # size of the overlapping slices in m/z dimension
+    binSize_D          = 0.25, # size of the overlapping slices in m/z dimension
     maxFeatures        = 50 # maximum number of peak groups to be identified in a single slice
   )
 }
 
 suggest_align_group_params <- function() {
   list(
-    binsize            = c(0.7, 1),
+    binSize_O          = c(0.7, 1),
     response           = c(1, 10),
     gapInit            = c(0, 0.4),
     gapExtend          = c(2.1, 2.7),
     bw                 = c(22, 38),
     minFraction        = c(0.3, 0.7),
-    binSize            = c(0.015, 0.035)
+    binSize_D          = c(0.015, 0.035)
   )
 }
 
@@ -116,7 +129,7 @@ param_types_align_group <- function() {
   assign(
     "quant",
     c(
-      "binsize",
+      "binSize_O",
       "response",
       "gapInit",
       "gapExtend",
@@ -126,7 +139,7 @@ param_types_align_group <- function() {
       "bw",
       "minFraction",
       "minSamples",
-      "binSize",
+      "binSize_D",
       "maxFeatures"
     ),
     envir = parent.frame()

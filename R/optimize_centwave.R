@@ -43,10 +43,8 @@ optimize_centwave <- function(
     # generate centWave parameters
     cwp <-
       purrr::pmap(
-        cbind(design, t(parameters$constant), stringsAsFactors = FALSE),
-        make_cwp,
-        roiList = parameters$lists$roiList,
-        roiScales = parameters$lists$roiScales
+        cbind(design, t(parameters$constant), t(parameters$lists)),
+        make_cwp
       )
 
     # run xcms for each experiment
@@ -303,25 +301,6 @@ generate_ccd <- function(parameters_to_optimize) {
     inscribed = TRUE,  # axis points are at +/- 1 and the cube points are at interior positions
     coding = formulas  # list of coding formulas for the design variables
   )
-
-}
-
-
-design_experiments <- function(parameters) {
-
-  if(length(parameters$to_optimize) > 1) {
-    design <- generate_ccd(parameters$to_optimize)
-    design <- rsm::decode.data(design)
-    design <- subset(design, select = -c(run.order, std.order, Block))
-  } else {
-    design <- seq(min(parameters$to_optimize[[1]]),
-                  max(parameters$to_optimize[[1]]),
-                  length.out = 9)
-    design <- data.frame(design)
-    colnames(design) <- names(parameters$to_optimize[1])
-  }
-
-  data.table(design)
 
 }
 

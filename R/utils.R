@@ -60,3 +60,22 @@ parse_parameters <- function(
 
   params
 }
+
+
+design_experiments <- function(parameters) {
+
+  if(length(parameters$to_optimize) > 1) {
+    design <- generate_ccd(parameters$to_optimize)
+    design <- rsm::decode.data(design)
+    design <- subset(design, select = -c(run.order, std.order, Block))
+  } else {
+    design <- seq(min(parameters$to_optimize[[1]]),
+                  max(parameters$to_optimize[[1]]),
+                  length.out = 9)
+    design <- data.frame(design)
+    colnames(design) <- names(parameters$to_optimize[1])
+  }
+
+  data.table(design)
+
+}
