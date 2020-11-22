@@ -485,12 +485,6 @@
       "Repository": "CRAN",
       "Hash": "ec8ca05cffcc70569eaaad8469d2a3a7"
     },
-    "faahKO": {
-      "Package": "faahKO",
-      "Version": "1.30.0",
-      "Source": "Bioconductor",
-      "Hash": "a65a81fa4596753c6c571137ccdd4388"
-    },
     "fansi": {
       "Package": "fansi",
       "Version": "0.4.1",
