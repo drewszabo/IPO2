@@ -109,12 +109,10 @@ optimize_centwave <- function(
       max_cwp <- cwp[matched_row]
     } else {
       max_cwp <- purrr::pmap(
-        c(maximum, parameters$constant),
-        make_cwp,
-        roiList = parameters$lists$roiList,
-        roiScales = parameters$lists$roiScales
-      )
-      max_xcmsnexp <- xcms::findChromPeaks(raw_data, param = max_cwp[[1]])
+        c(maximum, parameters$constant, parameters$lists),
+        make_cwp
+      )[[1]]
+      max_xcmsnexp <- xcms::findChromPeaks(raw_data, param = max_cwp)
       max_score <- score_peaks(max_xcmsnexp)
     }
 
@@ -183,7 +181,7 @@ suggest_centwave_params <- function() {
     max_peakwidth      = c(35, 65),
     snthresh           = 100,  # originally 10, increase to increase speed
     prefilter_k        = 3,
-    prefilter_int      = 1000,  # originally 100
+    prefilter_int      = 10000,  # originally 100
     mzdiff             = c(-0.001, 0.01),
     noise              = 0  # originally 0, increase to increase speed
   )
@@ -274,36 +272,6 @@ check_centwave_params <- function(parameter_list) {
   }
 }
 
-generate_ccd <- function(parameters_to_optimize) {
-
-  lower_bound <- sapply(parameters_to_optimize, "[[", 1)
-  upper_bound <- sapply(parameters_to_optimize, "[[", 2)
-  center <- (upper_bound - lower_bound) / 2
-
-  x <- paste0(
-    "x",
-    1:length(parameters_to_optimize),
-    " ~ (",
-    c(names(parameters_to_optimize)),
-    " - ",
-    (lower_bound + center),
-    ") / ",
-    center
-  )
-
-  formulas <- lapply(x, as.formula)
-
-  rsm::ccd(
-    length(parameters_to_optimize),  # number of variables
-    n0 = 1,  # number of center points
-    alpha = "face",  # position of the ‘star’ points
-    randomize = FALSE,
-    inscribed = TRUE,  # axis points are at +/- 1 and the cube points are at interior positions
-    coding = formulas  # list of coding formulas for the design variables
-  )
-
-}
-
 
 make_cwp <- function(
   min_peakwidth = 20,
@@ -316,125 +284,4 @@ make_cwp <- function(
     peakwidth = c(min_peakwidth, max_peakwidth),
     prefilter = c(prefilter_k, prefilter_int),
     ...)
-}
-
-
-create_model <- function(design, score) {
-
-  params <- paste0(colnames(design), collapse = ", ")
-  design <- cbind(design, score = score$score)
-
-  if(ncol(design) > 1) {
-    formula <- as.formula(paste0("score ~ SO(", params, ")"))
-    model <- rsm::rsm(formula, data = design)
-  } else {
-    formula <- as.formula(paste("score ~", params, "+", params, "^ 2"))
-    model <- lm(formula, data = design)
-  }
-
-  model
-
-}
-
-
-get_maximum <- function(design, model) {
-
-  number_params <- ncol(design)
-  steps <- ceiling(1E6 ^ (1/number_params))
-
-  param_values <- list()
-  for (nm in names(design)) {
-    minimum <- min(design[[nm]])
-    maximum <- max(design[[nm]])
-    param_values[[nm]] <- seq(minimum, maximum, length.out = steps)
-  }
-
-  search_grid <- do.call(CJ, param_values)
-  max_value <- predict(model, search_grid)
-  unlist(search_grid[max_value == max(max_value), ][1, ])
-
-}
-
-
-plot_contours <- function(design, model, maximum, plot_name) {
-
-  # make formula
-  form <- as.formula(
-    paste("~ ", paste(colnames(design), collapse = " + "))
-  )
-
-  # set plotting area
-  number_params <- 1:8
-  number_pairs <- number_params * (number_params - 1) / 2
-  number_columns <- c(1, 1, 1, 2, 2, 3, 3, 4)
-  number_rows <- number_pairs / number_columns
-
-  png(
-    plot_name,
-    width = 7.5,
-    height = 10,
-    units = "in",
-    res = 300
-  )
-
-  params <- ncol(design)
-  cols <- number_columns[which(number_params == params)]
-  rows <- number_rows[which(number_params == params)]
-  par(mfrow = c(rows, cols))
-
-  # plot
-  contour(model, form = form, image = TRUE, at = maximum)
-  dev.off()
-
-}
-
-
-pick_parameters <- function(parameters, maximum) {
-
-  width <- purrr::map_dbl(parameters, diff)
-  delta <- purrr::map2(parameters, as.list(maximum), ~abs(.x - .y))
-  params <- list()
-
-  for (nm in names(parameters)) {
-
-    if (sum(delta[[nm]] == 0) > 0) {
-      width[[nm]] <- width[[nm]] * 1.4
-    } else {
-      width[[nm]] <- width[[nm]] * 0.8
-    }
-
-    upper <- maximum[[nm]] + 0.5 * width[[nm]]
-    lower <- maximum[[nm]] - 0.5 * width[[nm]]
-
-    #set lower bounds
-    if (nm %in% c("ppm")) {
-      lower <- max(0, lower)
-    } else if (nm %in% c("min_peakwidth", "max_peakwidth")) {
-      lower <- max(0, lower)
-    } else if (nm %in% c("snthresh", "noise", "prefilter_k", "prefilter_int")) {
-      lower <- max(0, lower)
-    }
-
-    params[[nm]] <- unique(c(lower, upper))  # stop optimizing if converge
-
-  }
-
-  # prevent overlapping peakwidth optimization
-  if (max(params[["min_peakwidth"]] > min(params[["max_peakwidth"]]))) {
-    params[["max_peakwidth"]][[1]] <- params[["min_peakwidth"]][[2]]
-  }
-
-  rounding <- list(
-    ppm = 2,
-    min_peakwidth = 2,
-    max_peakwidth = 2,
-    snthresh = 0,
-    noise = 0,
-    prefilter_k = 0,
-    prefilter_int = 0,
-    mzdiff = 4
-  )
-
-  purrr::imap(params, ~round(.x, digits = rounding[[.y]]))
-
 }

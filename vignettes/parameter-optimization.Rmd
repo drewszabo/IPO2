@@ -9,6 +9,7 @@ vignette: >
 
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
+  message = FALSE,
   collapse = TRUE,
   comment = "#>"
 )
@@ -64,7 +65,7 @@ cwp_params <-
       log_file = paste0(system.file("scratch", package = "IPO2"), "/log.txt")
     ), 
     file = "cwp_params.rds",
-    rerun = FALSE
+    rerun = TRUE
   )
 ```
 
@@ -72,7 +73,7 @@ cwp_params <-
 
 ```{r}
 raw_data <- 
-  MSnbase::readMSData(files = files[seq(1, 18, 3)], mode = "onDisk") %>% 
+  MSnbase::readMSData(files = files[seq(2, 18, 3)], mode = "onDisk") %>% 
   MSnbase::filterRt(c(300, 900))
 
 xcmsnexp <- 
@@ -80,7 +81,7 @@ xcmsnexp <-
     xcms::findChromPeaks(
       raw_data,
       param = cwp_params$best_params,
-      BPPARAM = BiocParallel::bpparam(),
+      BPPARAM = BiocParallel::SerialParam(),
     ), 
     file = "xcmsnexp.rds", 
     rerun = FALSE

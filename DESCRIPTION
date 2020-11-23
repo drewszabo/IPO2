@@ -34,5 +34,6 @@ Imports:
     rsm,
     data.table,
     purrr,
-    BiocParallel
+    BiocParallel,
+    scales
 VignetteBuilder: knitr
