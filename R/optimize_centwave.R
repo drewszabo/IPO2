@@ -109,8 +109,10 @@ optimize_centwave <- function(
       max_cwp <- cwp[matched_row]
     } else {
       max_cwp <- purrr::pmap(
-        c(maximum, parameters$constant, parameters$lists),
-        make_cwp
+        c(maximum, parameters$constant),
+        make_cwp,
+        roiList = parameters$lists$roiList,
+        roiScales = parameters$lists$roiScales
       )[[1]]
       max_xcmsnexp <- xcms::findChromPeaks(raw_data, param = max_cwp)
       max_score <- score_peaks(max_xcmsnexp)
