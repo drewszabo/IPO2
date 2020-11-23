@@ -95,9 +95,9 @@
     },
     "GenomeInfoDb": {
       "Package": "GenomeInfoDb",
-      "Version": "1.26.0",
+      "Version": "1.26.1",
       "Source": "Bioconductor",
-      "Hash": "f44d06397ff70ae5ede97f24195193ed"
+      "Hash": "0dc6752f1e4894ac536c2b0c9a2e2799"
     },
     "GenomeInfoDbData": {
       "Package": "GenomeInfoDbData",
@@ -342,10 +342,10 @@
     },
     "cli": {
       "Package": "cli",
-      "Version": "2.1.0",
+      "Version": "2.2.0",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "0b316487b21d21f99ebf98abe179b1ea"
+      "Hash": "3ef298932294b775fa0a3eeaa3a645b0"
     },
     "clipr": {
       "Package": "clipr",
@@ -543,15 +543,15 @@
     },
     "gert": {
       "Package": "gert",
-      "Version": "1.0.2",
+      "Version": "1.0.9000",
       "Source": "GitHub",
       "RemoteType": "github",
       "RemoteUsername": "r-lib",
       "RemoteRepo": "gert",
       "RemoteRef": "master",
-      "RemoteSha": "69be66c86ec7c9bea5e907a72a28b90c976f4e21",
+      "RemoteSha": "9526b550028c39fa3dc7c7785e987ad0df379b2e",
       "RemoteHost": "api.github.com",
-      "Hash": "97947ac54187fb300b4fb47782721791"
+      "Hash": "a722f203e8511f2d789fac38e6602b52"
     },
     "ggplot2": {
       "Package": "ggplot2",
@@ -577,12 +577,12 @@
       "Version": "0.1.0.9000",
       "Source": "GitHub",
       "RemoteType": "github",
-      "RemoteHost": "api.github.com",
       "RemoteUsername": "r-lib",
       "RemoteRepo": "gitcreds",
       "RemoteRef": "master",
-      "RemoteSha": "91c3d49079d94d99d92f9d6d31afe993a474a4a2",
-      "Hash": "7c8bea0b3f93cf3966bcfc93d983bbfd"
+      "RemoteSha": "50a1608b5728598f1c281c5aea6091740538f762",
+      "RemoteHost": "api.github.com",
+      "Hash": "f17d14e1b8e7b27aea415a489bc7796e"
     },
     "glue": {
       "Package": "glue",
@@ -813,9 +813,9 @@
     },
     "mzR": {
       "Package": "mzR",
-      "Version": "2.24.0",
+      "Version": "2.24.1",
       "Source": "Bioconductor",
-      "Hash": "3cc56324c5563115d6ab87b56909f9de"
+      "Hash": "f09d762f709ab0ca0c489e93c21902ac"
     },
     "ncdf4": {
       "Package": "ncdf4",
@@ -853,10 +853,10 @@
     },
     "pillar": {
       "Package": "pillar",
-      "Version": "1.4.6",
+      "Version": "1.4.7",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "bdf26e55ccb7df3e49a490150277f002"
+      "Hash": "3b3dd89b2ee115a8b54e93a34cd546b4"
     },
     "pkgbuild": {
       "Package": "pkgbuild",
@@ -948,6 +948,13 @@
       "Repository": "CRAN",
       "Hash": "97def703420c8ab10d8f0e6c72101e02"
     },
+    "rappdirs": {
+      "Package": "rappdirs",
+      "Version": "0.3.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "8c8298583adbbe76f3c2220eef71bebc"
+    },
     "rcmdcheck": {
       "Package": "rcmdcheck",
       "Version": "1.3.3",
@@ -971,15 +978,15 @@
     },
     "renv": {
       "Package": "renv",
-      "Version": "0.12.2-20",
+      "Version": "0.12.2-24",
       "Source": "GitHub",
       "RemoteType": "github",
       "RemoteUsername": "rstudio",
       "RemoteRepo": "renv",
       "RemoteRef": "master",
-      "RemoteSha": "c1319ac90494926d5ed1743f4b176385aa452a9b",
+      "RemoteSha": "8d3ab7fbf53268571cc0ff8251c95bd82e68ee03",
       "RemoteHost": "api.github.com",
-      "Hash": "c939b8de60849c949da772cadf3c36dd"
+      "Hash": "fb9bba51ddc3e4034ad23adb6bfe2aef"
     },
     "rex": {
       "Package": "rex",
@@ -1139,9 +1146,9 @@
       "RemoteUsername": "r-lib",
       "RemoteRepo": "usethis",
       "RemoteRef": "master",
-      "RemoteSha": "f0f3f91494a1b15c1b08ee78dc73ab7d1cf8b6a8",
+      "RemoteSha": "ce577f08bcafd355799e1f74d8c68b645fadcb2e",
       "RemoteHost": "api.github.com",
-      "Hash": "241396644ac26aad202cf411d2c5d486"
+      "Hash": "faace96937ecb04332d7e956c64e96d3"
     },
     "utf8": {
       "Package": "utf8",
