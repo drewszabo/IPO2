@@ -49,7 +49,7 @@ raw_data <-
 unlink(
   paste0(
     system.file("scratch", package = "IPO2"), 
-    c("/centwave_contours", "/log.txt")
+    c("/centwave", "/log.txt")
   ), 
   recursive = TRUE
 )
@@ -65,7 +65,7 @@ cwp_params <-
       log_file = paste0(system.file("scratch", package = "IPO2"), "/log.txt")
     ), 
     file = "cwp_params.rds",
-    rerun = TRUE
+    rerun = FALSE
   )
 ```
 
