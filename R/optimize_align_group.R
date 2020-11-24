@@ -40,7 +40,7 @@ optimize_align_group <- function(
   # set up iteration loop
   history <- list()
   iteration <- 1
-  while(iteration <= 3) {
+  while(iteration <= 50) {
 
     cat(
       format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
@@ -76,6 +76,7 @@ optimize_align_group <- function(
           BiocParallel::bplapply(
             obi,
             function(x) {
+              register(BiocParallel::SerialParam())
               xcms::adjustRtime(
                 xcmsnexp,
                 param = x
@@ -119,6 +120,7 @@ optimize_align_group <- function(
         BiocParallel::bptry(
           BiocParallel::bpmapply(
             function(x, y) {
+              register(BiocParallel::SerialParam())
               xcms::groupChromPeaks(
                 x,
                 param = y
@@ -184,19 +186,19 @@ optimize_align_group <- function(
       align_params <- max_params[names(max_params) %in% obi_params]
       names(align_params)[names(align_params) == "binSize_O"] <- "binSize"
       max_obi <- purrr::pmap(
-        data.frame(t(align_params)),
+        data.table(t(align_params)),
         xcms::ObiwarpParam
-      )[[1]]
+      )
 
       group_params <- max_params[names(max_params) %in% density_params]
       names(group_params)[names(group_params) == "binSize_D"] <- "binSize"
       max_density <- purrr::pmap(
-        data.frame(t(group_params)),
+        data.table(t(group_params)),
         xcms::PeakDensityParam
-      )[[1]]
+      )
 
-      max_xcmsnexp <- xcms::adjustRtime(xcmsnexp, param = max_obi)
-      max_xcmsnexp <- xcms::groupChromPeaks(xcmsnexp, param = max_density)
+      max_xcmsnexp <- xcms::adjustRtime(xcmsnexp, param = max_obi[[1]])
+      max_xcmsnexp <- xcms::groupChromPeaks(xcmsnexp, param = max_density[[1]])
 
       max_score <- score_align_group(max_xcmsnexp)
       max_score <-
@@ -209,11 +211,11 @@ optimize_align_group <- function(
 
     # assign to history
     history[[iteration]] <-
-      cbind(
-        t(unlist(parameters$to_optimize)),
-        obi = max_obi,
-        density = max_density,
-        t(maximum),
+      c(
+        unlist(parameters$to_optimize),
+        obi = list(max_obi),
+        density = list(max_density),
+        maximum,
         score = max_score
       )
 
@@ -239,8 +241,9 @@ optimize_align_group <- function(
 
   # output results
   history <- rbindlist(history)
-
-  history
+  best_obi <- history[score == max(score), obi][[1]]
+  best_density <- history[score == max(score), density][[1]]
+  list(history = history, best_obi = best_obi, best_density = best_density)
 
 }
 
