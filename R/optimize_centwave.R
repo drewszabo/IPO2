@@ -118,10 +118,10 @@ optimize_centwave <- function(
 
     # assign to history
     history[[iteration]] <-
-      cbind(
-        t(unlist(parameters$to_optimize)),
-        cwp = max_cwp,
-        t(maximum),
+      c(
+        unlist(parameters$to_optimize),
+        cwp = list(max_cwp),
+        maximum,
         max_score
       )
 
@@ -147,8 +147,8 @@ optimize_centwave <- function(
 
   # output results
   history <- rbindlist(history)
-  best_params <- history[score == max(score), cwp][[1]]
-  list(history = history, best_params = best_params)
+  best_cwp <- history[score == max(score), cwp][[1]]
+  list(history = history, best_cwp = best_cwp)
 
 }
 
