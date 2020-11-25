@@ -164,17 +164,18 @@ plot_contours <- function(design, model, maximum, plot_name) {
   number_columns <- c(1, 1, 1, 2, 2, 3, 3, 4)
   number_rows <- number_pairs / number_columns
 
+  params <- ncol(design)
+  cols <- number_columns[which(number_params == params)]
+  rows <- number_rows[which(number_params == params)]
+
   png(
     plot_name,
-    width = 7.5,
-    height = 10,
+    width = cols * 4,
+    height = rows * 4,
     units = "in",
     res = 300
   )
 
-  params <- ncol(design)
-  cols <- number_columns[which(number_params == params)]
-  rows <- number_rows[which(number_params == params)]
   par(mfrow = c(rows, cols))
 
   # plot
