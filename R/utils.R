@@ -203,12 +203,36 @@ pick_parameters <- function(parameters, maximum) {
     lower <- maximum[[nm]] - 0.5 * width[[nm]]
 
     #set lower bounds
-    if (nm %in% c("ppm")) {
+    positive <- c(
+      "ppm",
+      "min_peakwidth",
+      "max_peakwidth",
+      "snthresh",
+      "noise",
+      "prefilter_k",
+      "prefilter_int",
+      "binSize_O",
+      "response",
+      "gapInit",
+      "gapExtend",
+      "factorDiag",
+      "factorGap",
+      "initPenalty",
+      "bw",
+      "minFraction",
+      "minSamples",
+      "binSize_D",
+      "maxFeatures"
+    )
+
+    less_than_one <- c("minFraction")
+
+    if (nm %in% positive) {
       lower <- max(0, lower)
-    } else if (nm %in% c("min_peakwidth", "max_peakwidth")) {
-      lower <- max(0, lower)
-    } else if (nm %in% c("snthresh", "noise", "prefilter_k", "prefilter_int")) {
-      lower <- max(0, lower)
+    }
+
+    if (nm %in% less_than_one) {
+      upper <- min(1, upper)
     }
 
     params[[nm]] <- unique(c(lower, upper))  # stop optimizing if converge
@@ -249,4 +273,27 @@ pick_parameters <- function(parameters, maximum) {
 
   purrr::imap(params, ~round(.x, digits = rounding[[.y]]))
 
+}
+
+
+rerun_parallel <- function(action, f) {
+  redo <- TRUE
+  trial <- 1
+  redo_list <- list()
+  while(redo & trial <= 5) {
+    out <- BiocParallel::bptry(eval(f))
+    errs <- sum(bpok(grouped) == FALSE)
+    cat(
+      "     ", action, "Iteration:", sprintf("%02d", iteration),
+      "     trial:", trial,
+      "     Errors:", errs,
+      "\n"
+    )
+    redo <- errs > 0
+    if (redo) {
+      redo_list <- out
+      trial <- trial + 1
+    }
+  }
+  out
 }
