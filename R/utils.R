@@ -191,6 +191,29 @@ pick_parameters <- function(parameters, maximum) {
   delta <- purrr::map2(parameters, as.list(maximum), ~abs(.x - .y))
   params <- list()
 
+  boundaries <- list(
+    ppm = c(0, Inf, 2),
+    min_peakwidth = c(0, Inf, 2),
+    max_peakwidth = c(0, Inf, 2),
+    snthresh = c(0, Inf, 0),
+    noise = c(0, Inf, 0),
+    prefilter_k = c(0, Inf, 0),
+    prefilter_int = c(0, Inf, 0),
+    mzdiff = c(-Inf, Inf, 4),
+    binSize_O = c(0, Inf, 3),
+    response = c(1, 100, 0),
+    gapInit = c(0, Inf, 2),
+    gapExtend = c(0, Inf, 2),
+    factorDiag = c(-Inf, Inf, 0),
+    factorGap = c(-Inf, Inf, 0),
+    initPenalty = c(0, Inf, 2),
+    bw = c(0, Inf, 2),
+    minFraction = c(0, 1, 2),
+    minSamples = c(0, Inf, 0),
+    binSize_D = c(0, Inf, 3),
+    maxFeatures = c(0, Inf, 2)
+  )
+
   for (nm in names(parameters)) {
 
     if (sum(delta[[nm]] == 0) > 0) {
@@ -202,38 +225,11 @@ pick_parameters <- function(parameters, maximum) {
     upper <- maximum[[nm]] + 0.5 * width[[nm]]
     lower <- maximum[[nm]] - 0.5 * width[[nm]]
 
-    #set lower bounds
-    positive <- c(
-      "ppm",
-      "min_peakwidth",
-      "max_peakwidth",
-      "snthresh",
-      "noise",
-      "prefilter_k",
-      "prefilter_int",
-      "binSize_O",
-      "response",
-      "gapInit",
-      "gapExtend",
-      "factorDiag",
-      "factorGap",
-      "initPenalty",
-      "bw",
-      "minFraction",
-      "minSamples",
-      "binSize_D",
-      "maxFeatures"
-    )
+    lower <- max(boundaries[[nm]][[1]], lower)
+    upper <- min(boundaries[[nm]][[2]], upper)
 
-    less_than_one <- c("minFraction")
-
-    if (nm %in% positive) {
-      lower <- max(0, lower)
-    }
-
-    if (nm %in% less_than_one) {
-      upper <- min(1, upper)
-    }
+    lower <- round(lower, digits = boundaries[[nm]][[3]])
+    upper <- round(upper, digits = boundaries[[nm]][[3]])
 
     params[[nm]] <- unique(c(lower, upper))  # stop optimizing if converge
 
@@ -248,30 +244,7 @@ pick_parameters <- function(parameters, maximum) {
     }
   }
 
-  rounding <- list(
-    ppm = 2,
-    min_peakwidth = 2,
-    max_peakwidth = 2,
-    snthresh = 0,
-    noise = 0,
-    prefilter_k = 0,
-    prefilter_int = 0,
-    mzdiff = 4,
-    binSize_O = 3,
-    response = 0,
-    gapInit = 2,
-    gapExtend = 2,
-    factorDiag = 0,
-    factorGap = 0,
-    initPenalty = 2,
-    bw = 2,
-    minFraction = 2,
-    minSamples = 0,
-    binSize_D = 3,
-    maxFeatures = 2
-  )
-
-  purrr::imap(params, ~round(.x, digits = rounding[[.y]]))
+  params
 
 }
 
