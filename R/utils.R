@@ -161,8 +161,8 @@ plot_contours <- function(design, model, maximum, plot_name) {
   # set plotting area
   number_params <- 1:8
   number_pairs <- number_params * (number_params - 1) / 2
-  number_columns <- c(1, 1, 1, 2, 2, 3, 3, 4)
-  number_rows <- number_pairs / number_columns
+  number_rows <- c(1, 1, 1, 2, 2, 3, 3, 4)
+  number_columns <- number_pairs / number_rows
 
   params <- ncol(design)
   cols <- number_columns[which(number_params == params)]
@@ -207,7 +207,7 @@ pick_parameters <- function(parameters, maximum) {
     factorDiag = c(-Inf, Inf, 0),
     factorGap = c(-Inf, Inf, 0),
     initPenalty = c(0, Inf, 2),
-    bw = c(0, Inf, 2),
+    bw = c(0.01, Inf, 2),
     minFraction = c(0, 1, 2),
     minSamples = c(0, Inf, 0),
     binSize_D = c(0, Inf, 3),
@@ -246,27 +246,4 @@ pick_parameters <- function(parameters, maximum) {
 
   params
 
-}
-
-
-rerun_parallel <- function(action, f) {
-  redo <- TRUE
-  trial <- 1
-  redo_list <- list()
-  while(redo & trial <= 5) {
-    out <- BiocParallel::bptry(eval(f))
-    errs <- sum(bpok(grouped) == FALSE)
-    cat(
-      "     ", action, "Iteration:", sprintf("%02d", iteration),
-      "     trial:", trial,
-      "     Errors:", errs,
-      "\n"
-    )
-    redo <- errs > 0
-    if (redo) {
-      redo_list <- out
-      trial <- trial + 1
-    }
-  }
-  out
 }
