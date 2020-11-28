@@ -1,6 +1,11 @@
 score_align_group <- function(xcmsnexp) {
 
   f_defs <- xcms::featureDefinitions(xcmsnexp)
+
+  if (nrow(f_defs) == 0) {
+    return(list(rcs = 0, good = 0, bad = 0, gs = 0))
+  }
+
   peaks <- xcms::chromPeaks(xcmsnexp)
 
   # score rt deviation
