@@ -47,9 +47,10 @@ raw_data <-
 ```{r}
 # cleanup
 unlink(
-  paste0(
+  list.files(
     system.file("scratch", package = "IPO2"), 
-    c("/centwave", "/log.txt")
+    c("centwave"), 
+    full.names = TRUE
   ), 
   recursive = TRUE
 )
@@ -62,10 +63,10 @@ cwp_params <-
     optimize_centwave(
       raw_data = raw_data,
       plot_dir = system.file("scratch", package = "IPO2"),
-      log_file = paste0(system.file("scratch", package = "IPO2"), "/log.txt")
+      log_file = paste0(system.file("scratch", package = "IPO2"), "/centwave_log.txt")
     ), 
     file = "cwp_params.rds",
-    rerun = TRUE
+    rerun = FALSE
   )
 ```
 
@@ -75,16 +76,41 @@ cwp_params <-
 raw_data <- 
   MSnbase::readMSData(files = files[seq(2, 18, 3)], mode = "onDisk") %>% 
   MSnbase::filterRt(c(300, 900))
+```
 
+```{r}
 xcmsnexp <- 
   xfun::cache_rds(
     xcms::findChromPeaks(
       raw_data,
-      param = cwp_params$best_params,
+      param = cwp_params$best_cwp,
       BPPARAM = BiocParallel::SerialParam(),
     ), 
     file = "xcmsnexp.rds", 
     rerun = FALSE
+  )
+```
+
+```{r}
+# cleanup
+unlink(
+  list.files(
+    system.file("scratch", package = "IPO2"), 
+    c("align_group"), 
+    full.names = TRUE
+  ), 
+  recursive = TRUE
+)
+
+align_group_params <-
+  xfun::cache_rds(
+    optimize_align_group(
+      xcmsnexp = xcmsnexp,
+      plot_dir = system.file("scratch", package = "IPO2"),
+      log_file = paste0(system.file("scratch", package = "IPO2"), "/align_group_log.txt")
+    ), 
+    file = "align_group_params.rds",
+    rerun = TRUE
   )
 ```
 
