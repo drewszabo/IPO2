@@ -37,11 +37,6 @@ optimize_align_group <- function(
     parameter_list$sampleGroups <- rep(1, length(unique(unlist(dt$sample))))
   }
 
-  # define variables
-  redo <- TRUE
-  trial <- 1
-  redo_list <- list()
-
   # set up iteration loop
   history <- list()
   iteration <- 1
@@ -238,11 +233,6 @@ optimize_align_group <- function(
       max_xcmsnexp <- xcms::groupChromPeaks(xcmsnexp, param = max_density[[1]])
 
       max_score <- score_align_group(max_xcmsnexp)
-      max_score <-
-        (
-          scales::rescale(c(max_score$rcs, score$rcs), to = c(0, 1)) +
-            scales::rescale(c(max_score$gs, score$gs), to = c(0, 1))
-        )[[1]]
 
     }
 
@@ -253,14 +243,16 @@ optimize_align_group <- function(
         obi = list(max_obi),
         density = list(max_density),
         maximum,
-        score = max_score
+        unlist(max_score)
       )
 
     # check for improvement
     if (iteration == 1) {
       better <- TRUE
     } else {
-      better <- history[[iteration]][["score"]] > history[[iteration - 1]][["score"]]
+      better <-
+        history[[iteration]][["rcs"]] > history[[iteration - 1]][["rcs"]] |
+        history[[iteration]][["gs"]] > history[[iteration - 1]][["gs"]]
     }
 
     # adjust intervals
@@ -278,6 +270,10 @@ optimize_align_group <- function(
 
   # output results
   history <- rbindlist(history)
+  history[, c("rcs", "gs") := lapply(.SD, scales::rescale, to = c(0, 1)), .SDcols = c("rcs", "gs")
+  ][
+    , score := rcs + gs
+  ]
   best_obi <- history[score == max(score), obi][[1]]
   best_density <- history[score == max(score), density][[1]]
   list(history = history, best_obi = best_obi, best_density = best_density)
