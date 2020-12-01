@@ -110,7 +110,7 @@ align_group_params <-
       log_file = paste0(system.file("scratch", package = "IPO2"), "/align_group_log.txt")
     ), 
     file = "align_group_params.rds",
-    rerun = TRUE
+    rerun = FALSE
   )
 ```
 
