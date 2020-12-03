@@ -1,5 +1,4 @@
-#' @importFrom magrittr %>%
-#' @importFrom rlang .data
+#' @import data.table
 
 #' @keywords internal
 "_PACKAGE"

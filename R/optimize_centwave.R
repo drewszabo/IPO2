@@ -10,8 +10,10 @@
 #' @param plot_dir Path for plot directory
 #'
 #' @return A list of length 2 containing:
-#' \item{history}{a data.table object recording the optimization history}
-#' \item{best_cwp}{a CentWaveParam object of the optimal parameters}
+#' \describe{
+#'   \item{history}{a data.table object recording the optimization history}
+#'   \item{best_cwp}{a CentWaveParam object of the optimal parameters}
+#' }
 #' @export
 #'
 #' @examples

@@ -22,9 +22,11 @@ optimize_align_group(
 }
 \value{
 A list of length 3 containing:
+\describe{
 \item{history}{a data.table object recording the optimization history}
 \item{best_obi}{an ObiWarpParam object of the optimal parameters}
 \item{best_density}{an PeakDensityParam object of the optimal parameters}
+}
 }
 \description{
 \code{optimize_align_group} will identify parameters for \code{xcms::adjustRtime} using

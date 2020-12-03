@@ -22,8 +22,10 @@ optimize_centwave(
 }
 \value{
 A list of length 2 containing:
+\describe{
 \item{history}{a data.table object recording the optimization history}
 \item{best_cwp}{a CentWaveParam object of the optimal parameters}
+}
 }
 \description{
 \code{optimize_centwave} will identify parameters for \code{xcms::findChromPeaks} by
