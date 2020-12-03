@@ -1,5 +1,21 @@
-
-
+#' Find peak alignment and grouping parameters
+#'
+#' `optimize_align_group` will identify parameters for `xcms::adjustRtime` using
+#' the ObiWarp algorithm and for `xcms::groupChromPeaks` using peak densities.
+#'
+#' @param xcmsnexp An XCMSnExp object
+#' @param parameter_list List of parameters to set or to optimize
+#' @param log_file Path for log file
+#' @param plot_dir Path for plot directory
+#'
+#' @return A list of length 3 containing:
+#' \item{history}{a data.table object recording the optimization history}
+#' \item{best_obi}{an ObiWarpParam object of the optimal parameters}
+#' \item{best_density}{an PeakDensityParam object of the optimal parameters}
+#' @export
+#'
+#' @examples
+#'
 optimize_align_group <- function(
   xcmsnexp = NULL,
   parameter_list = suggest_align_group_params(),

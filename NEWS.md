@@ -1,3 +1,7 @@
-# IPO2 0.0.0.9000
+# IPO2 0.0.1.9000
 
-* Added a `NEWS.md` file to track changes to the package.
+
+# IPO2 0.0.1
+
+* Working `optimize_centwave`.
+* Working `optimize_align_group`.

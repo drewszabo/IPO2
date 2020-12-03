@@ -1,4 +1,21 @@
-#' @import data.table
+#' Find centWave parameters
+#'
+#' `optimize_centwave` will identify parameters for `xcms::findChromPeaks` by
+#' optimizing the identification of isotope pairs. Note that currently the
+#' isotope identification algorithm relies on high resolution m/*z* measurements.
+#'
+#' @param raw_data MSnExp object containing the raw data
+#' @param parameter_list List of parameters to set or to optimize
+#' @param log_file Path for log file
+#' @param plot_dir Path for plot directory
+#'
+#' @return A list of length 2 containing:
+#' \item{history}{a data.table object recording the optimization history}
+#' \item{best_cwp}{a CentWaveParam object of the optimal parameters}
+#' @export
+#'
+#' @examples
+#'
 #'
 optimize_centwave <- function(
   raw_data = NULL,
