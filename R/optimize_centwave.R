@@ -71,11 +71,14 @@ optimize_centwave <- function(
       rlang::expr(
         BiocParallel::bplapply(
           cwp,
-          function(x) xcms::findChromPeaks(
-            raw_data,
-            param = x,
-            BPPARAM = BiocParallel::SerialParam()
-          )
+          function(x) {
+            xcms::findChromPeaks(
+              raw_data,
+              param = x,
+              BPPARAM = BiocParallel::SerialParam()
+            )
+          },
+          BPREDO = redo_list
         )
       ),
       "PEAKS"

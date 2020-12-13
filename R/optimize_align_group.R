@@ -101,45 +101,6 @@ optimize_align_group <- function(
       "ALIGN"
     )
 
-
-    # redo <- TRUE
-    # trial <- 1
-    # redo_list <- list()
-    # while(redo & trial <= 5) {
-    #   aligned <-
-    #     BiocParallel::bptry(
-    #       BiocParallel::bplapply(
-    #         obi,
-    #         function(x) {
-    #           register(BiocParallel::SerialParam())
-    #           xcms::adjustRtime(
-    #             xcmsnexp,
-    #             param = x
-    #           )
-    #         },
-    #         BPREDO = redo_list
-    #       )
-    #     )
-    #   errs <- sum(BiocParallel::bpok(aligned) == FALSE)
-    #   if (errs > 0) {
-    #     ids <- which(BiocParallel::bpok(aligned) == FALSE)
-    #   } else {
-    #     ids <- vector()
-    #   }
-    #   cat(
-    #     "     ALIGN",
-    #     "     Trial:", trial,
-    #     "     Errors:", errs,
-    #     "     IDs:", ids,
-    #     "\n"
-    #   )
-    #   redo <- errs > 0
-    #   if (redo) {
-    #     redo_list <- aligned
-    #     trial <- trial + 1
-    #   }
-    # }
-
     # generate density parameters
     group_params <- params[, colnames(params) %in% density_params, with = FALSE]
     setnames(group_params, "binSize_D", "binSize")
@@ -150,77 +111,35 @@ optimize_align_group <- function(
       )
 
     # run grouping
-    redo <- TRUE
-    trial <- 1
-    redo_list <- list()
-    while(redo & trial <= 5) {
-      grouped <-
-        BiocParallel::bptry(
-          BiocParallel::bpmapply(
-            function(x, y) {
-              register(BiocParallel::SerialParam())
-              xcms::groupChromPeaks(
-                x,
-                param = y
-              )
-            },
-            x = aligned,
-            y = density,
-            BPREDO = redo_list
-          )
+    grouped <- retry_parallel(
+      rlang::expr(
+        BiocParallel::bpmapply(
+          function(x, y) {
+            register(BiocParallel::SerialParam())
+            xcms::groupChromPeaks(
+              x,
+              param = y
+            )
+          },
+          x = aligned,
+          y = density,
+          BPREDO = redo_list
         )
-      errs <- sum(BiocParallel::bpok(grouped) == FALSE)
-      if (errs > 0) {
-        ids <- which(BiocParallel::bpok(grouped) == FALSE)
-      } else {
-        ids <- vector()
-      }
-      cat(
-        "     GROUP",
-        "     Trial:", trial,
-        "     Errors:", errs,
-        "     IDs:", ids,
-        "\n"
-      )
-      redo <- errs > 0
-      if (redo) {
-        redo_list <- grouped
-        trial <- trial + 1
-      }
-    }
+      ),
+      "GROUP"
+    )
 
     # score
-    redo <- TRUE
-    trial <- 1
-    redo_list <- list()
-    while(redo & trial <= 5) {
-      score <-
-        BiocParallel::bptry(
-          BiocParallel::bplapply(
-            grouped,
-            score_align_group,
-            BPREDO = redo_list
-          )
+    score <- retry_parallel(
+      rlang::expr(
+        BiocParallel::bplapply(
+          grouped,
+          score_align_group,
+          BPREDO = redo_list
         )
-      errs <- sum(BiocParallel::bpok(score) == FALSE)
-      if (errs > 0) {
-        ids <- which(BiocParallel::bpok(score) == FALSE)
-      } else {
-        ids <- vector()
-      }
-      cat(
-        "     SCORE",
-        "     Trial:", trial,
-        "     Errors:", errs,
-        "     IDs:", ids,
-        "\n"
-      )
-      redo <- errs > 0
-      if (redo) {
-        redo_list <- score
-        trial <- trial + 1
-      }
-    }
+      ),
+      "SCORE"
+    )
 
     score <- rbindlist(score)
 

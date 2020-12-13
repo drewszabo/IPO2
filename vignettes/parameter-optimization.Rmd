@@ -54,10 +54,7 @@ unlink(
   ), 
   recursive = TRUE
 )
-```
 
-
-```{r}
 cwp_params <-
   xfun::cache_rds(
     optimize_centwave(
@@ -66,7 +63,7 @@ cwp_params <-
       log_file = paste0(system.file("scratch", package = "IPO2"), "/centwave_log.txt")
     ), 
     file = "cwp_params.rds",
-    rerun = FALSE
+    rerun = TRUE
   )
 ```
 
@@ -110,7 +107,7 @@ align_group_params <-
       log_file = paste0(system.file("scratch", package = "IPO2"), "/align_group_log.txt")
     ), 
     file = "align_group_params.rds",
-    rerun = FALSE
+    rerun = TRUE
   )
 ```
 
