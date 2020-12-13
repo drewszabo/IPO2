@@ -84,43 +84,60 @@ optimize_align_group <- function(
       )
 
     # run alignment
-    redo <- TRUE
-    trial <- 1
-    redo_list <- list()
-    while(redo & trial <= 5) {
-      aligned <-
-        BiocParallel::bptry(
-          BiocParallel::bplapply(
-            obi,
-            function(x) {
-              register(BiocParallel::SerialParam())
-              xcms::adjustRtime(
-                xcmsnexp,
-                param = x
-              )
-            },
-            BPREDO = redo_list
-          )
+    aligned <- retry_parallel(
+      rlang::expr(
+        BiocParallel::bplapply(
+          obi,
+          function(x) {
+            register(BiocParallel::SerialParam())
+            xcms::adjustRtime(
+              xcmsnexp,
+              param = x
+            )
+          }
         )
-      errs <- sum(BiocParallel::bpok(aligned) == FALSE)
-      if (errs > 0) {
-        ids <- which(BiocParallel::bpok(aligned) == FALSE)
-      } else {
-        ids <- vector()
-      }
-      cat(
-        "     ALIGN",
-        "     Trial:", trial,
-        "     Errors:", errs,
-        "     IDs:", ids,
-        "\n"
-      )
-      redo <- errs > 0
-      if (redo) {
-        redo_list <- aligned
-        trial <- trial + 1
-      }
-    }
+      ),
+      "ALIGN"
+    )
+
+
+    # redo <- TRUE
+    # trial <- 1
+    # redo_list <- list()
+    # while(redo & trial <= 5) {
+    #   aligned <-
+    #     BiocParallel::bptry(
+    #       BiocParallel::bplapply(
+    #         obi,
+    #         function(x) {
+    #           register(BiocParallel::SerialParam())
+    #           xcms::adjustRtime(
+    #             xcmsnexp,
+    #             param = x
+    #           )
+    #         },
+    #         BPREDO = redo_list
+    #       )
+    #     )
+    #   errs <- sum(BiocParallel::bpok(aligned) == FALSE)
+    #   if (errs > 0) {
+    #     ids <- which(BiocParallel::bpok(aligned) == FALSE)
+    #   } else {
+    #     ids <- vector()
+    #   }
+    #   cat(
+    #     "     ALIGN",
+    #     "     Trial:", trial,
+    #     "     Errors:", errs,
+    #     "     IDs:", ids,
+    #     "\n"
+    #   )
+    #   redo <- errs > 0
+    #   if (redo) {
+    #     redo_list <- aligned
+    #     trial <- trial + 1
+    #   }
+    # }
 
     # generate density parameters
     group_params <- params[, colnames(params) %in% density_params, with = FALSE]
