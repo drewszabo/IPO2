@@ -248,22 +248,24 @@ pick_parameters <- function(parameters, maximum) {
 
 }
 
-retry_parallel <- function(FUN, iteration) {
+retry_parallel <- function(FUN, action) {
   redo <- TRUE
   trial <- 1
   redo_list <- list()
   while(redo & trial <= 5) {
     out <-
       BiocParallel::bptry(
-        eval(FUN, env = rlang::env(rlang::caller_env(), BPREDO = redo_list))
+        eval(FUN, env = rlang::env(rlang::caller_env()))
       )
     errs <- sum(BiocParallel::bpok(out) == FALSE)
     redo <- errs > 0
     if (errs > 0) {
-      ids <- which(BiocParallel::bpok(aligned) == FALSE)
+      ids <- which(BiocParallel::bpok(out) == FALSE)
     } else {
       ids <- vector()
-    }cat(
+    }
+    cat(
+      "     ", action,
       "     Trial:", trial,
       "     Errors:", errs,
       "     IDs:", ids,

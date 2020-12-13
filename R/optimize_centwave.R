@@ -78,7 +78,7 @@ optimize_centwave <- function(
           )
         )
       ),
-      iteration
+      "PEAKS"
     )
 
     # redo <- TRUE
