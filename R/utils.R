@@ -255,7 +255,7 @@ retry_parallel <- function(FUN, action) {
   while(redo & trial <= 5) {
     out <-
       BiocParallel::bptry(
-        eval(FUN, env = rlang::env(rlang::caller_env()))
+        eval(FUN, env = rlang::env(rlang::caller_env(), redo_list = redo_list))
       )
     errs <- sum(BiocParallel::bpok(out) == FALSE)
     redo <- errs > 0
@@ -265,7 +265,7 @@ retry_parallel <- function(FUN, action) {
       ids <- vector()
     }
     cat(
-      "     ", action,
+      "    ", action,
       "     Trial:", trial,
       "     Errors:", errs,
       "     IDs:", ids,

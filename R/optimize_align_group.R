@@ -94,7 +94,8 @@ optimize_align_group <- function(
               xcmsnexp,
               param = x
             )
-          }
+          },
+          BPREDO = redo_list
         )
       ),
       "ALIGN"
