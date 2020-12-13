@@ -6,8 +6,9 @@ check_log_file <- function(log_file) {
   if (file.exists(log_file)) {
     paste0(
       dirname(log_file),
-      format(Sys.time(), "/%Y-%m-%d_%H:%M:%S_"),
-      basename(log_file)
+      "/",
+      sub("\\.txt$", "", basename(log_file)),
+      format(Sys.time(), "_%Y-%m-%d_%H:%M:%S.txt")
     )
   } else {
     log_file
