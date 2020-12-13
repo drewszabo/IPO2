@@ -35,5 +35,6 @@ Imports:
     data.table,
     purrr,
     BiocParallel,
-    scales
+    scales,
+    rlang
 VignetteBuilder: knitr

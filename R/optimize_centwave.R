@@ -67,36 +67,50 @@ optimize_centwave <- function(
       )
 
     # run xcms for each experiment
-    redo <- TRUE
-    trial <- 1
-    redo_list <- list()
-    while(redo & trial <= 5) {
-      xcmsnexp <- BiocParallel::bptry(
+    xcmsnexp <- retry_parallel(
+      rlang::expr(
         BiocParallel::bplapply(
           cwp,
-          function(x) {
-            xcms::findChromPeaks(
-              raw_data,
-              param = x,
-              BPPARAM = BiocParallel::SerialParam(),
-            )
-          },
-          BPREDO = redo_list
+          function(x) xcms::findChromPeaks(
+            raw_data,
+            param = x,
+            BPPARAM = BiocParallel::SerialParam()
+          )
         )
-      )
-      errs <- sum(bpok(xcmsnexp) == FALSE)
-      cat(
-        "Iteration:", sprintf("%02d", iteration),
-        "     trial:", trial,
-        "     Errors:", errs,
-        "\n"
-      )
-      redo <- errs > 0
-      if (redo) {
-        redo_list <- xcmsnexp
-        trial <- trial + 1
-      }
-    }
+      ),
+      iteration
+    )
+
+    # redo <- TRUE
+    # trial <- 1
+    # redo_list <- list()
+    # while(redo & trial <= 5) {
+    #   xcmsnexp <- BiocParallel::bptry(
+    #     BiocParallel::bplapply(
+    #       cwp,
+    #       function(x) {
+    #         xcms::findChromPeaks(
+    #           raw_data,
+    #           param = x,
+    #           BPPARAM = BiocParallel::SerialParam(),
+    #         )
+    #       },
+    #       BPREDO = redo_list
+    #     )
+    #   )
+    #   errs <- sum(bpok(xcmsnexp) == FALSE)
+    #   cat(
+    #     "Iteration:", sprintf("%02d", iteration),
+    #     "     Trial:", trial,
+    #     "     Errors:", errs,
+    #     "\n"
+    #   )
+    #   redo <- errs > 0
+    #   if (redo) {
+    #     redo_list <- xcmsnexp
+    #     trial <- trial + 1
+    #   }
+    # }
 
     # score experiment
     score <-
