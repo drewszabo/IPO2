@@ -80,7 +80,7 @@ find_isotopes <- function(peak_table) {
 
   isotope_pairs <- data.table::rbindlist(pair)
 
-  if (nrow(isotope_pairs) == 1) return(list())
+  if (nrow(isotope_pairs) == 0) return(list())
 
   # identify overlapping retention time windows
   rt_overlap <-
