@@ -84,45 +84,19 @@ optimize_centwave <- function(
       "PEAKS"
     )
 
-    # redo <- TRUE
-    # trial <- 1
-    # redo_list <- list()
-    # while(redo & trial <= 5) {
-    #   xcmsnexp <- BiocParallel::bptry(
-    #     BiocParallel::bplapply(
-    #       cwp,
-    #       function(x) {
-    #         xcms::findChromPeaks(
-    #           raw_data,
-    #           param = x,
-    #           BPPARAM = BiocParallel::SerialParam(),
-    #         )
-    #       },
-    #       BPREDO = redo_list
-    #     )
-    #   )
-    #   errs <- sum(bpok(xcmsnexp) == FALSE)
-    #   cat(
-    #     "Iteration:", sprintf("%02d", iteration),
-    #     "     Trial:", trial,
-    #     "     Errors:", errs,
-    #     "\n"
-    #   )
-    #   redo <- errs > 0
-    #   if (redo) {
-    #     redo_list <- xcmsnexp
-    #     trial <- trial + 1
-    #   }
-    # }
-
     # score experiment
-    score <-
-      rbindlist(
-        BiocParallel::bplapply(
-          xcmsnexp,
-          score_peaks
-        )
+    score <- rbindlist(
+      retry_parallel(
+        rlang::expr(
+          BiocParallel::bplapply(
+            xcmsnexp,
+            score_peaks,
+            BPREDO = redo_list
+          )
+        ),
+        "SCORE"
       )
+    )
 
     # calculate model
     model <- create_model(design, score)
