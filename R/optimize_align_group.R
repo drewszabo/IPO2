@@ -25,6 +25,9 @@ optimize_align_group <- function(
   plot_dir = NULL
 ){
 
+  # parallel processing
+  bpparam <- BiocParallel::bpparam()
+
   # check xcmsnexp
   if (nrow(xcmsnexp) <= 1) {
     stop("Not enough files for alignment")
@@ -89,13 +92,14 @@ optimize_align_group <- function(
         BiocParallel::bplapply(
           obi,
           function(x) {
-            register(BiocParallel::SerialParam())
+            BiocParallel::register(BiocParallel::SerialParam())
             xcms::adjustRtime(
               xcmsnexp,
               param = x
             )
           },
-          BPREDO = redo_list
+          BPREDO = redo_list,
+          BPPARAM = bpparam
         )
       ),
       "ALIGN"
@@ -115,7 +119,7 @@ optimize_align_group <- function(
       rlang::expr(
         BiocParallel::bpmapply(
           function(x, y) {
-            register(BiocParallel::SerialParam())
+            BiocParallel::register(BiocParallel::SerialParam())
             xcms::groupChromPeaks(
               x,
               param = y
@@ -123,7 +127,8 @@ optimize_align_group <- function(
           },
           x = aligned,
           y = density,
-          BPREDO = redo_list
+          BPREDO = redo_list,
+          BPPARAM = bpparam
         )
       ),
       "GROUP"
@@ -135,7 +140,8 @@ optimize_align_group <- function(
         BiocParallel::bplapply(
           grouped,
           score_align_group,
-          BPREDO = redo_list
+          BPREDO = redo_list,
+          BPPARAM = bpparam
         )
       ),
       "SCORE"
