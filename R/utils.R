@@ -249,33 +249,58 @@ pick_parameters <- function(parameters, maximum) {
 
 }
 
-retry_parallel <- function(FUN, action) {
-  redo <- TRUE
-  trial <- 1
-  redo_list <- list()
-  while(redo & trial <= 5) {
-    out <-
-      BiocParallel::bptry(
-        eval(FUN, env = rlang::env(rlang::caller_env(), redo_list = redo_list))
-      )
-    errs <- sum(BiocParallel::bpok(out) == FALSE)
-    redo <- errs > 0
-    if (errs > 0) {
-      ids <- which(BiocParallel::bpok(out) == FALSE)
-    } else {
-      ids <- vector()
-    }
-    cat(
-      "    ", action,
-      "     Trial:", trial,
-      "     Errors:", errs,
-      "     IDs:", ids,
-      "\n"
-    )
-    if (redo) {
-      redo_list <- out
+# retry_parallel <- function(FUN, action) {
+#   redo <- TRUE
+#   trial <- 1
+#   redo_list <- list()
+#   while(redo & trial <= 5) {
+#     out <-
+#       BiocParallel::bptry(
+#         eval(FUN, env = rlang::env(rlang::caller_env(), redo_list = redo_list))
+#       )
+#     errs <- sum(BiocParallel::bpok(out) == FALSE)
+#     redo <- errs > 0
+#     if (errs > 0) {
+#       ids <- which(BiocParallel::bpok(out) == FALSE)
+#     } else {
+#       ids <- vector()
+#     }
+#     cat(
+#       "    ", action,
+#       "     Trial:", trial,
+#       "     Errors:", errs,
+#       "     IDs:", ids,
+#       "\n"
+#     )
+#     if (redo) {
+#       redo_list <- out
+#       trial <- trial + 1
+#     }
+#   }
+#   out
+# }
+
+retry_parallel <- function(x, FUN, log_file = NULL) {
+  list2env(x, envir = NULL)
+  len <- length(unlist(x)) / length(x)
+  foreach::foreach(i = 1:len) %dopar% {
+    redo <- TRUE
+    trial <- 1
+    while(redo & trial <= 5) {
+      out <- try(eval(FUN))
+      redo <- inherits(out, "try-error")
+      if (redo && !is.null(log_file)) {
+        cat(
+          "    X:", sprintf("%02d", i),
+          "    Trial:", trial,
+          "    Error:", redo,
+          "\n",
+          file = log_file,
+          append = TRUE
+        )
+      }
       trial <- trial + 1
     }
+    out
   }
-  out
 }

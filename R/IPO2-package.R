@@ -1,4 +1,5 @@
 #' @import data.table
+#' @importFrom foreach %dopar%
 
 #' @keywords internal
 "_PACKAGE"

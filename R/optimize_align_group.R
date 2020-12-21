@@ -25,8 +25,8 @@ optimize_align_group <- function(
   plot_dir = NULL
 ){
 
-  # parallel processing
-  bpparam <- BiocParallel::bpparam()
+  # ensure serial processing
+  BiocParallel::register(BiocParallel::SerialParam())
 
   # check xcmsnexp
   if (nrow(xcmsnexp) <= 1) {
@@ -87,23 +87,35 @@ optimize_align_group <- function(
       )
 
     # run alignment
+    cat("  ALIGNING\n")
     aligned <- retry_parallel(
+      list(obi = obi),
       rlang::expr(
-        BiocParallel::bplapply(
-          obi,
-          function(x) {
-            BiocParallel::register(BiocParallel::SerialParam())
-            xcms::adjustRtime(
-              xcmsnexp,
-              param = x
-            )
-          },
-          BPREDO = redo_list,
-          BPPARAM = bpparam
+        xcms::adjustRtime(
+          xcmsnexp,
+          param = obi[[i]],
         )
       ),
-      "ALIGN"
+      log_file = log_file
     )
+
+    # aligned <- retry_parallel(
+    #   rlang::expr(
+    #     BiocParallel::bplapply(
+    #       obi,
+    #       function(x) {
+    #         BiocParallel::register(BiocParallel::SerialParam())
+    #         xcms::adjustRtime(
+    #           xcmsnexp,
+    #           param = x
+    #         )
+    #       },
+    #       BPREDO = redo_list,
+    #       BPPARAM = bpparam
+    #     )
+    #   ),
+    #   "ALIGN"
+    # )
 
     # generate density parameters
     group_params <- params[, colnames(params) %in% density_params, with = FALSE]
@@ -115,24 +127,37 @@ optimize_align_group <- function(
       )
 
     # run grouping
+    cat("  GROUPING\n")
     grouped <- retry_parallel(
+      aligned,
+      obi,
       rlang::expr(
-        BiocParallel::bpmapply(
-          function(x, y) {
-            BiocParallel::register(BiocParallel::SerialParam())
-            xcms::groupChromPeaks(
-              x,
-              param = y
-            )
-          },
-          x = aligned,
-          y = density,
-          BPREDO = redo_list,
-          BPPARAM = bpparam
+        xcms::groupChromPeaks(
+          aligned[[i]],
+          param = obi[[i]],
         )
       ),
-      "GROUP"
+      log_file = log_file
     )
+
+    # grouped <- retry_parallel(
+    #   rlang::expr(
+    #     BiocParallel::bpmapply(
+    #       function(x, y) {
+    #         BiocParallel::register(BiocParallel::SerialParam())
+    #         xcms::groupChromPeaks(
+    #           x,
+    #           param = y
+    #         )
+    #       },
+    #       x = aligned,
+    #       y = density,
+    #       BPREDO = redo_list,
+    #       BPPARAM = bpparam
+    #     )
+    #   ),
+    #   "GROUP"
+    # )
 
     # score
     score <- retry_parallel(

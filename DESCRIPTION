@@ -36,5 +36,6 @@ Imports:
     purrr,
     BiocParallel,
     scales,
-    rlang
+    rlang,
+    foreach
 VignetteBuilder: knitr

@@ -25,7 +25,6 @@ suppressPackageStartupMessages({
 
 # parallel processing
 doParallel::registerDoParallel(parallel::detectCores() - 1)
-register(BiocParallel::DoparParam(stop.on.error = FALSE))
 ```
 
 # Data Import

@@ -26,6 +26,9 @@ optimize_centwave <- function(
   plot_dir = NULL
 ) {
 
+  # ensure serial processing
+  BiocParallel::register(BiocParallel::SerialParam())
+
   # check parameters
   check_centwave_params(parameter_list)
 
@@ -67,36 +70,58 @@ optimize_centwave <- function(
       )
 
     # run xcms for each experiment
+    cat("  PEAK PICKING\n")
     xcmsnexp <- retry_parallel(
+      x = list(cwp = cwp),
       rlang::expr(
-        BiocParallel::bplapply(
-          cwp,
-          function(x) {
-            xcms::findChromPeaks(
-              raw_data,
-              param = x,
-              BPPARAM = BiocParallel::SerialParam()
-            )
-          },
-          BPREDO = redo_list
+        xcms::findChromPeaks(
+          raw_data,
+          param = cwp[[i]],
+          BPPARAM = BiocParallel::SerialParam()
         )
       ),
-      "PEAKS"
+      log_file = log_file
     )
 
+    # xcmsnexp <- retry_parallel(
+    #   rlang::expr(
+    #     BiocParallel::bplapply(
+    #       cwp,
+    #       function(x) {
+    #         xcms::findChromPeaks(
+    #           raw_data,
+    #           param = x,
+    #           BPPARAM = BiocParallel::SerialParam()
+    #         )
+    #       },
+    #       BPREDO = redo_list
+    #     )
+    #   ),
+    #   "PEAKS"
+    # )
+
     # score experiment
+    cat("  SCORING\n")
     score <- rbindlist(
       retry_parallel(
-        rlang::expr(
-          BiocParallel::bplapply(
-            xcmsnexp,
-            score_peaks,
-            BPREDO = redo_list
-          )
-        ),
-        "SCORE"
+        list(xcmsnexp = xcmsnexp),
+        rlang::expr(score_peaks(xcmsnexp[[i]])),
+        log_file = log_file
       )
     )
+
+    # score <- rbindlist(
+    #   retry_parallel(
+    #     rlang::expr(
+    #       BiocParallel::bplapply(
+    #         xcmsnexp,
+    #         score_peaks,
+    #         BPREDO = redo_list
+    #       )
+    #     ),
+    #     "SCORE"
+    #   )
+    # )
 
     # calculate model
     model <- create_model(design, score)
