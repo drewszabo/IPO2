@@ -26,9 +26,6 @@ optimize_centwave <- function(
   plot_dir = NULL
 ) {
 
-  # ensure serial processing
-  BiocParallel::register(BiocParallel::SerialParam())
-
   # check parameters
   check_centwave_params(parameter_list)
 
@@ -43,6 +40,13 @@ optimize_centwave <- function(
   if (!is.null(plot_dir)) {
     pd <- check_plot_dir(plot_dir, "centwave")
   }
+
+  # ensure serial processing
+  BiocParallel::register(BiocParallel::SerialParam())
+
+  # create environment
+  e <- new.env(parent = emptyenv())
+  e$raw_data <- raw_data
 
   # set up iteration loop
   history <- list()
@@ -63,65 +67,36 @@ optimize_centwave <- function(
     design <- design_experiments(parameters)
 
     # generate centWave parameters
-    cwp <-
+    e$cwp <-
       purrr::pmap(
         cbind(design, t(parameters$constant), t(parameters$lists)),
         make_cwp
       )
 
     # run xcms for each experiment
-    cat("  PEAK PICKING\n")
-    xcmsnexp <- retry_parallel(
-      x = list(cwp = cwp),
+    cat("    PEAK PICKING\n")
+    e$xcmsnexp <- retry_parallel(
+      e,
+      x = length(e$cwp),
       rlang::expr(
         xcms::findChromPeaks(
-          raw_data,
-          param = cwp[[i]],
-          BPPARAM = BiocParallel::SerialParam()
+          e$raw_data,
+          param = e$cwp[[i]],
         )
       ),
       log_file = log_file
     )
 
-    # xcmsnexp <- retry_parallel(
-    #   rlang::expr(
-    #     BiocParallel::bplapply(
-    #       cwp,
-    #       function(x) {
-    #         xcms::findChromPeaks(
-    #           raw_data,
-    #           param = x,
-    #           BPPARAM = BiocParallel::SerialParam()
-    #         )
-    #       },
-    #       BPREDO = redo_list
-    #     )
-    #   ),
-    #   "PEAKS"
-    # )
-
     # score experiment
-    cat("  SCORING\n")
+    cat("    SCORING\n")
     score <- rbindlist(
       retry_parallel(
-        list(xcmsnexp = xcmsnexp),
-        rlang::expr(score_peaks(xcmsnexp[[i]])),
+        e,
+        x = length(e$xcmsnexp),
+        rlang::expr(score_peaks(e$xcmsnexp[[i]])),
         log_file = log_file
       )
     )
-
-    # score <- rbindlist(
-    #   retry_parallel(
-    #     rlang::expr(
-    #       BiocParallel::bplapply(
-    #         xcmsnexp,
-    #         score_peaks,
-    #         BPREDO = redo_list
-    #       )
-    #     ),
-    #     "SCORE"
-    #   )
-    # )
 
     # calculate model
     model <- create_model(design, score)
@@ -141,13 +116,13 @@ optimize_centwave <- function(
 
     if(!is.na(matched_row)) {
       max_score <- score[matched_row, ]
-      max_cwp <- cwp[matched_row]
+      max_cwp <- e$cwp[matched_row]
     } else {
       max_cwp <- purrr::pmap(
         data.table(t(maximum), t(parameters$constant), t(parameters$lists)),
         make_cwp
       )
-      max_xcmsnexp <- xcms::findChromPeaks(raw_data, param = max_cwp[[1]])
+      max_xcmsnexp <- xcms::findChromPeaks(e$raw_data, param = max_cwp[[1]])
       max_score <- score_peaks(max_xcmsnexp)
     }
 

@@ -280,20 +280,18 @@ pick_parameters <- function(parameters, maximum) {
 #   out
 # }
 
-retry_parallel <- function(x, FUN, log_file = NULL) {
-  list2env(x, envir = NULL)
-  len <- length(unlist(x)) / length(x)
-  foreach::foreach(i = 1:len) %dopar% {
+retry_parallel <- function(e, x, fun, log_file = NULL) {
+  foreach::foreach(i = 1:x, .export = ls(e)) %dopar% {
     redo <- TRUE
     trial <- 1
     while(redo & trial <= 5) {
-      out <- try(eval(FUN))
+      out <- try(eval(fun))
       redo <- inherits(out, "try-error")
       if (redo && !is.null(log_file)) {
         cat(
-          "    X:", sprintf("%02d", i),
-          "    Trial:", trial,
-          "    Error:", redo,
+          "      X:", sprintf("%03d", i),
+          "      Trial:", trial,
+          "      Error:", redo,
           "\n",
           file = log_file,
           append = TRUE

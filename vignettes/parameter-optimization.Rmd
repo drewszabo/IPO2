@@ -60,7 +60,7 @@ cwp_params <-
       raw_data = raw_data,
       plot_dir = system.file("scratch", package = "IPO2"),
       log_file = paste0(system.file("scratch", package = "IPO2"), "/centwave_log.txt")
-    ), 
+    ),
     file = "cwp_params.rds",
     rerun = TRUE
   )

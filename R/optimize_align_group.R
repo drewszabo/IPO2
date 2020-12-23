@@ -25,9 +25,6 @@ optimize_align_group <- function(
   plot_dir = NULL
 ){
 
-  # ensure serial processing
-  BiocParallel::register(BiocParallel::SerialParam())
-
   # check xcmsnexp
   if (nrow(xcmsnexp) <= 1) {
     stop("Not enough files for alignment")
@@ -49,6 +46,13 @@ optimize_align_group <- function(
   if (!is.null(plot_dir)) {
     pd <- check_plot_dir(plot_dir, "align_group")
   }
+
+  # ensure serial processing
+  BiocParallel::register(BiocParallel::SerialParam())
+
+  # create environment
+  e <- new.env(parent = emptyenv())
+  e$xcmsnexp <- xcmsnexp
 
   # identify center sample
   dt <- data.table(xcms::chromPeaks(xcmsnexp), keep.rownames = TRUE)
@@ -80,99 +84,63 @@ optimize_align_group <- function(
     # generate obiwarp parameters
     align_params <- params[, colnames(params) %in% obi_params, with = FALSE]
     setnames(align_params, "binSize_O", "binSize")
-    obi <-
+    e$obi <-
       purrr::pmap(
         align_params,
         xcms::ObiwarpParam
       )
 
     # run alignment
-    cat("  ALIGNING\n")
-    aligned <- retry_parallel(
-      list(obi = obi),
+    cat("    ALIGNING\n")
+    e$trial <- retry_parallel(
+      e,
+      x = length(e$obi),
       rlang::expr(
         xcms::adjustRtime(
-          xcmsnexp,
-          param = obi[[i]],
+          e$xcmsnexp,
+          param = e$obi[[i]],
         )
       ),
       log_file = log_file
     )
 
-    # aligned <- retry_parallel(
-    #   rlang::expr(
-    #     BiocParallel::bplapply(
-    #       obi,
-    #       function(x) {
-    #         BiocParallel::register(BiocParallel::SerialParam())
-    #         xcms::adjustRtime(
-    #           xcmsnexp,
-    #           param = x
-    #         )
-    #       },
-    #       BPREDO = redo_list,
-    #       BPPARAM = bpparam
-    #     )
-    #   ),
-    #   "ALIGN"
-    # )
-
     # generate density parameters
     group_params <- params[, colnames(params) %in% density_params, with = FALSE]
     setnames(group_params, "binSize_D", "binSize")
-    density <-
+    e$density <-
       purrr::pmap(
         group_params,
         xcms::PeakDensityParam
       )
 
     # run grouping
-    cat("  GROUPING\n")
-    grouped <- retry_parallel(
-      aligned,
-      obi,
+    cat("    GROUPING\n")
+    e$trial <- retry_parallel(
+      e,
+      x = length(e$density),
+      # x = list(
+      #   aligned = aligned,
+      #   density = density
+      # ),
       rlang::expr(
         xcms::groupChromPeaks(
-          aligned[[i]],
-          param = obi[[i]],
+          e$trial[[i]],
+          param = e$density[[i]]
         )
       ),
       log_file = log_file
     )
 
-    # grouped <- retry_parallel(
-    #   rlang::expr(
-    #     BiocParallel::bpmapply(
-    #       function(x, y) {
-    #         BiocParallel::register(BiocParallel::SerialParam())
-    #         xcms::groupChromPeaks(
-    #           x,
-    #           param = y
-    #         )
-    #       },
-    #       x = aligned,
-    #       y = density,
-    #       BPREDO = redo_list,
-    #       BPPARAM = bpparam
-    #     )
-    #   ),
-    #   "GROUP"
-    # )
-
     # score
-    score <- retry_parallel(
-      rlang::expr(
-        BiocParallel::bplapply(
-          grouped,
-          score_align_group,
-          BPREDO = redo_list,
-          BPPARAM = bpparam
-        )
-      ),
-      "SCORE"
+    cat("    SCORING\n")
+    score <- rbindlist(
+      retry_parallel(
+        e,
+        x = length(e$trial),
+        rlang::expr(score_align_group(e$trial[[i]])),
+        log_file = log_file
+      )
     )
-
-    score <- rbindlist(score)
 
     score[, c("rcs", "gs") := lapply(.SD, scales::rescale, to = c(0, 1)), .SDcols = c("rcs", "gs")
     ][
