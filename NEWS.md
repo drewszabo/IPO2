@@ -1,8 +1,10 @@
 # IPO2 (development version)
 
-* Extract function to repeat `bplapply` if errors identified.
+# IPO2 0.0.2
+
 * Reformat renaming of log files.
 * Handle peak scoring when no isotope peaks identified.
+* Transition from `BiocParallel` to `foreach` for parallel processing.
 
 # IPO2 0.0.1
 
