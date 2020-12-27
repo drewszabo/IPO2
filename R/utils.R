@@ -211,7 +211,7 @@ pick_parameters <- function(parameters, maximum) {
     bw = c(0.01, Inf, 2),
     minFraction = c(0, 1, 2),
     minSamples = c(0, Inf, 0),
-    binSize_D = c(0, Inf, 3),
+    binSize_D = c(0.001, Inf, 3),
     maxFeatures = c(0, Inf, 2)
   )
 
@@ -249,14 +249,14 @@ pick_parameters <- function(parameters, maximum) {
 
 }
 
-retry_parallel <- function(FUN, action) {
+retry_parallel <- function(fun) {
   redo <- TRUE
   trial <- 1
   redo_list <- list()
   while(redo & trial <= 5) {
     out <-
       BiocParallel::bptry(
-        eval(FUN, env = rlang::env(rlang::caller_env(), redo_list = redo_list))
+        eval(fun, env = rlang::env(rlang::caller_env(), redo_list = redo_list))
       )
     errs <- sum(BiocParallel::bpok(out) == FALSE)
     redo <- errs > 0
@@ -266,7 +266,6 @@ retry_parallel <- function(FUN, action) {
       ids <- vector()
     }
     cat(
-      "    ", action,
       "     Trial:", trial,
       "     Errors:", errs,
       "     IDs:", ids,

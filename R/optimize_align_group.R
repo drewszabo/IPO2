@@ -25,9 +25,6 @@ optimize_align_group <- function(
   plot_dir = NULL
 ){
 
-  # parallel processing
-  bpparam <- BiocParallel::bpparam()
-
   # check xcmsnexp
   if (nrow(xcmsnexp) <= 1) {
     stop("Not enough files for alignment")
@@ -86,25 +83,6 @@ optimize_align_group <- function(
         xcms::ObiwarpParam
       )
 
-    # run alignment
-    aligned <- retry_parallel(
-      rlang::expr(
-        BiocParallel::bplapply(
-          obi,
-          function(x) {
-            BiocParallel::register(BiocParallel::SerialParam())
-            xcms::adjustRtime(
-              xcmsnexp,
-              param = x
-            )
-          },
-          BPREDO = redo_list,
-          BPPARAM = bpparam
-        )
-      ),
-      "ALIGN"
-    )
-
     # generate density parameters
     group_params <- params[, colnames(params) %in% density_params, with = FALSE]
     setnames(group_params, "binSize_D", "binSize")
@@ -114,40 +92,30 @@ optimize_align_group <- function(
         xcms::PeakDensityParam
       )
 
-    # run grouping
-    grouped <- retry_parallel(
-      rlang::expr(
-        BiocParallel::bpmapply(
-          function(x, y) {
-            BiocParallel::register(BiocParallel::SerialParam())
-            xcms::groupChromPeaks(
-              x,
-              param = y
-            )
-          },
-          x = aligned,
-          y = density,
-          BPREDO = redo_list,
-          BPPARAM = bpparam
+    # run alignment
+    score <- rbindlist(
+      retry_parallel(
+        rlang::expr(
+          BiocParallel::bpmapply(
+            function(x, y) {
+              BiocParallel::register(BiocParallel::SerialParam())
+              xcms::adjustRtime(
+                xcmsnexp,
+                param = x
+              ) %>%
+                xcms::groupChromPeaks(
+                  param = y
+                ) %>%
+                score_align_group()
+            },
+            x = obi,
+            y = density,
+            BPREDO = redo_list,
+            SIMPLIFY = FALSE
+          )
         )
-      ),
-      "GROUP"
+      )
     )
-
-    # score
-    score <- retry_parallel(
-      rlang::expr(
-        BiocParallel::bplapply(
-          grouped,
-          score_align_group,
-          BPREDO = redo_list,
-          BPPARAM = bpparam
-        )
-      ),
-      "SCORE"
-    )
-
-    score <- rbindlist(score)
 
     score[, c("rcs", "gs") := lapply(.SD, scales::rescale, to = c(0, 1)), .SDcols = c("rcs", "gs")
     ][
@@ -169,33 +137,24 @@ optimize_align_group <- function(
     }
 
     # score best parameters
-    matched_row <- design[as.list(maximum), on = names(maximum), which = TRUE]
+    align_params <- max_params[names(max_params) %in% obi_params]
+    names(align_params)[names(align_params) == "binSize_O"] <- "binSize"
+    max_obi <- purrr::pmap(
+      data.table(t(align_params)),
+      xcms::ObiwarpParam
+    )
 
-    if(!is.na(matched_row)) {
-      max_score <- score[matched_row, ]
-      max_obi <- obi[matched_row]
-      max_density <- density[matched_row]
-    } else {
-      align_params <- max_params[names(max_params) %in% obi_params]
-      names(align_params)[names(align_params) == "binSize_O"] <- "binSize"
-      max_obi <- purrr::pmap(
-        data.table(t(align_params)),
-        xcms::ObiwarpParam
-      )
+    group_params <- max_params[names(max_params) %in% density_params]
+    names(group_params)[names(group_params) == "binSize_D"] <- "binSize"
+    max_density <- purrr::pmap(
+      data.table(t(group_params)),
+      xcms::PeakDensityParam
+    )
 
-      group_params <- max_params[names(max_params) %in% density_params]
-      names(group_params)[names(group_params) == "binSize_D"] <- "binSize"
-      max_density <- purrr::pmap(
-        data.table(t(group_params)),
-        xcms::PeakDensityParam
-      )
-
-      max_xcmsnexp <- xcms::adjustRtime(xcmsnexp, param = max_obi[[1]])
-      max_xcmsnexp <- xcms::groupChromPeaks(xcmsnexp, param = max_density[[1]])
-
-      max_score <- score_align_group(max_xcmsnexp)
-
-    }
+    max_score <-
+      xcms::adjustRtime(xcmsnexp, param = max_obi[[1]]) %>%
+      xcms::groupChromPeaks(param = max_density[[1]]) %>%
+      score_align_group()
 
     # assign to history
     history[[iteration]] <-
