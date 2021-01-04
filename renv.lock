@@ -146,9 +146,15 @@
     },
     "MSnbase": {
       "Package": "MSnbase",
-      "Version": "2.16.0",
-      "Source": "Bioconductor",
-      "Hash": "4be083067f464784a828e0e9b0286608"
+      "Version": "2.17.3",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteUsername": "lgatto",
+      "RemoteRepo": "MSnbase",
+      "RemoteRef": "master",
+      "RemoteSha": "1b52bec436fde9606d31bada05b368a3e9229d4c",
+      "Hash": "08bfebe728657351a8d64ba05bd6d694"
     },
     "MassSpecWavelet": {
       "Package": "MassSpecWavelet",
@@ -829,9 +835,15 @@
     },
     "mzR": {
       "Package": "mzR",
-      "Version": "2.24.1",
-      "Source": "Bioconductor",
-      "Hash": "f09d762f709ab0ca0c489e93c21902ac"
+      "Version": "2.25.1",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteUsername": "sneumann",
+      "RemoteRepo": "mzR",
+      "RemoteRef": "master",
+      "RemoteSha": "09d5907dac19bb336a25a5cd61b39349bd009889",
+      "Hash": "ed4405ede58bd8a68cf763d5fa2cbd66"
     },
     "ncdf4": {
       "Package": "ncdf4",
