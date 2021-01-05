@@ -26,13 +26,22 @@ optimize_centwave <- function(
   plot_dir = NULL
 ) {
 
+  # output
+  old_w <- getOption("width")
+  options(width = 300)
+  on.exit(options(width = old_w), add = TRUE, after = TRUE)
+
+  max_print <- getOption("max.print")
+  options(max.print = 99999)
+  on.exit(options(max.print = max_print), add = TRUE, after = TRUE)
+
   # check parameters
   check_centwave_params(parameter_list)
 
   # log file
   if (!is.null(log_file)) {
-    log_file <- check_log_file(log_file)
-    sink(log_file, append = TRUE, type = "output")
+    log_file <- check_file(log_file)
+    sink(log_file, append = TRUE, type = "output", split = TRUE)
     on.exit(sink(), add = TRUE, after = TRUE)
   }
 
@@ -118,6 +127,14 @@ optimize_centwave <- function(
         max_score
       )
 
+    hx <- rbindlist(history)[, !c("cwp")]
+    end_cols <- c("total", "isotopes", "indeterminate", "score")
+    setcolorder(hx, order(setdiff(names(hx), end_cols)))
+
+    cat("\n")
+    capture.output(hx, file = log_file, append = TRUE)
+    cat("\n\n")
+
     # check for improvement
     if (iteration == 1) {
       better <- TRUE
@@ -140,6 +157,7 @@ optimize_centwave <- function(
 
   # output results
   history <- rbindlist(history)
+  setcolorder(history, order(setdiff(names(history), c(end_cols, cwp))))
   best_cwp <- history[score == max(score), cwp][[1]]
   list(history = history, best_cwp = best_cwp)
 

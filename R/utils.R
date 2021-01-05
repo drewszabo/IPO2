@@ -2,16 +2,16 @@
   match(x, table, nomatch = 0L) == 0L
 }
 
-check_log_file <- function(log_file) {
-  if (file.exists(log_file)) {
+check_file <- function(filename) {
+  if (file.exists(filename)) {
     paste0(
-      dirname(log_file),
+      dirname(filename),
       "/",
-      sub("\\.txt$", "", basename(log_file)),
+      sub("\\.txt$", "", basename(filename)),
       format(Sys.time(), "_%Y-%m-%d_%H:%M:%S.txt")
     )
   } else {
-    log_file
+    filename
   }
 }
 
@@ -267,7 +267,7 @@ retry_parallel <- function(fun) {
     }
     cat(
       "     Trial:", trial,
-      "     Errors:", errs,
+      "     Errors:", sprintf("%3d", errs),
       "     IDs:", ids,
       "\n"
     )

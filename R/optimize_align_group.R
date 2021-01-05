@@ -25,6 +25,15 @@ optimize_align_group <- function(
   plot_dir = NULL
 ){
 
+  # output
+  old_w <- getOption("width")
+  options(width = 300)
+  on.exit(options(width = old_w), add = TRUE, after = TRUE)
+
+  max_print <- getOption("max.print")
+  options(max.print = 99999)
+  on.exit(options(max.print = max_print), add = TRUE, after = TRUE)
+
   # check xcmsnexp
   if (nrow(xcmsnexp) <= 1) {
     stop("Not enough files for alignment")
@@ -37,8 +46,8 @@ optimize_align_group <- function(
 
   # log file
   if (!is.null(log_file)) {
-    log_file <- check_log_file(log_file)
-    sink(log_file, append = TRUE, type = "output")
+    log_file <- check_file(log_file)
+    sink(log_file, append = TRUE, type = "output", split = TRUE)
     on.exit(sink(), add = TRUE, after = TRUE)
   }
 
@@ -166,6 +175,14 @@ optimize_align_group <- function(
         unlist(max_score)
       )
 
+    hx <- rbindlist(history)[, !c("obi", "density")]
+    end_cols <- c("rcs", "good", "bad", "gs")
+    setcolorder(hx, order(setdiff(names(hx), end_cols)))
+
+    cat("\n")
+    capture.output(hx, file = log_file, append = TRUE)
+    cat("\n\n")
+
     # check for improvement
     if (iteration == 1) {
       better <- TRUE
@@ -194,6 +211,7 @@ optimize_align_group <- function(
   ][
     , score := rcs + gs
   ]
+  setcolorder(history, order(setdiff(names(history), c(end_cols, obi, density))))
   best_obi <- history[score == max(score), obi][[1]]
   best_density <- history[score == max(score), density][[1]]
   list(history = history, best_obi = best_obi, best_density = best_density)
