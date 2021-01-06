@@ -1,3 +1,9 @@
+# IPO2 0.0.3
+
+* Add history to log file output in case of failed run.
+* Split sink output to both log file and console.
+* Increase grouping parameter bandwidth minimum to 1 (from 0.01) to increase processing speed.
+
 # IPO2 0.0.2
 
 * Extract function to repeat `bplapply` if errors identified.
