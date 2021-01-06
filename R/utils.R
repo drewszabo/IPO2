@@ -208,7 +208,7 @@ pick_parameters <- function(parameters, maximum) {
     factorDiag = c(-Inf, Inf, 0),
     factorGap = c(-Inf, Inf, 0),
     initPenalty = c(0, Inf, 2),
-    bw = c(0.01, Inf, 2),
+    bw = c(1, Inf, 2),
     minFraction = c(0, 1, 2),
     minSamples = c(0, Inf, 0),
     binSize_D = c(0.001, Inf, 3),
