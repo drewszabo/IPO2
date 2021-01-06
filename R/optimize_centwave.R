@@ -28,7 +28,7 @@ optimize_centwave <- function(
 
   # output
   old_w <- getOption("width")
-  options(width = 300)
+  options(width = 1000)
   on.exit(options(width = old_w), add = TRUE, after = TRUE)
 
   max_print <- getOption("max.print")
@@ -136,11 +136,7 @@ optimize_centwave <- function(
     cat("\n\n")
 
     # check for improvement
-    if (iteration == 1) {
-      better <- TRUE
-    } else {
-      better <- history[[iteration]][["score"]] > history[[iteration - 1]][["score"]]
-    }
+    better <- hx[[iteration, "score"]] == max(hx[["score"]])
 
     # adjust intervals
     if (better) {

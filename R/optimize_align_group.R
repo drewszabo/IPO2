@@ -27,7 +27,7 @@ optimize_align_group <- function(
 
   # output
   old_w <- getOption("width")
-  options(width = 300)
+  options(width = 1000)
   on.exit(options(width = old_w), add = TRUE, after = TRUE)
 
   max_print <- getOption("max.print")
@@ -184,13 +184,8 @@ optimize_align_group <- function(
     cat("\n\n")
 
     # check for improvement
-    if (iteration == 1) {
-      better <- TRUE
-    } else {
-      better <-
-        history[[iteration]][["rcs"]] > history[[iteration - 1]][["rcs"]] |
-        history[[iteration]][["gs"]] > history[[iteration - 1]][["gs"]]
-    }
+    better <- hx[[iteration, "rcs"]] == max(hx[["rcs"]]) |
+      hx[[iteration, "gs"]] == max(hx[["gs"]])
 
     # adjust intervals
     if (better) {
