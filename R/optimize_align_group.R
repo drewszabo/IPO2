@@ -178,14 +178,17 @@ optimize_align_group <- function(
     hx <- rbindlist(history)[, !c("obi", "density")]
     end_cols <- c("rcs", "good", "bad", "gs")
     setcolorder(hx, order(setdiff(names(hx), end_cols)))
+    hx[, c("rcs_adj", "gs_adj") := lapply(.SD, scales::rescale, to = c(0, 1)), .SDcols = c("rcs", "gs")
+    ][
+      , score := rcs_adj + gs_adj
+    ]
 
     cat("\n")
     capture.output(hx, file = log_file, append = TRUE)
     cat("\n\n")
 
     # check for improvement
-    better <- hx[[iteration, "rcs"]] == max(hx[["rcs"]]) |
-      hx[[iteration, "gs"]] == max(hx[["gs"]])
+    better <- hx[[iteration, "score"]] == max(hx[["score"]])
 
     # adjust intervals
     if (better) {
@@ -202,9 +205,9 @@ optimize_align_group <- function(
 
   # output results
   history <- rbindlist(history)
-  history[, c("rcs", "gs") := lapply(.SD, scales::rescale, to = c(0, 1)), .SDcols = c("rcs", "gs")
+  history[, c("rcs_adj", "gs_adj") := lapply(.SD, scales::rescale, to = c(0, 1)), .SDcols = c("rcs", "gs")
   ][
-    , score := rcs + gs
+    , score := rcs_adj + gs_adj
   ]
   setcolorder(history, order(setdiff(names(history), c(end_cols, obi, density))))
   best_obi <- history[score == max(score), obi][[1]]
