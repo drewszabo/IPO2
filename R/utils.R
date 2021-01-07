@@ -2,16 +2,16 @@
   match(x, table, nomatch = 0L) == 0L
 }
 
-check_log_file <- function(log_file) {
-  if (file.exists(log_file)) {
+check_file <- function(filename) {
+  if (file.exists(filename)) {
     paste0(
-      dirname(log_file),
+      dirname(filename),
       "/",
-      sub("\\.txt$", "", basename(log_file)),
+      sub("\\.txt$", "", basename(filename)),
       format(Sys.time(), "_%Y-%m-%d_%H:%M:%S.txt")
     )
   } else {
-    log_file
+    filename
   }
 }
 
@@ -208,10 +208,10 @@ pick_parameters <- function(parameters, maximum) {
     factorDiag = c(-Inf, Inf, 0),
     factorGap = c(-Inf, Inf, 0),
     initPenalty = c(0, Inf, 2),
-    bw = c(0.01, Inf, 2),
+    bw = c(1, Inf, 2),
     minFraction = c(0, 1, 2),
     minSamples = c(0, Inf, 0),
-    binSize_D = c(0, Inf, 3),
+    binSize_D = c(0.001, Inf, 3),
     maxFeatures = c(0, Inf, 2)
   )
 
@@ -249,54 +249,31 @@ pick_parameters <- function(parameters, maximum) {
 
 }
 
-# retry_parallel <- function(FUN, action) {
-#   redo <- TRUE
-#   trial <- 1
-#   redo_list <- list()
-#   while(redo & trial <= 5) {
-#     out <-
-#       BiocParallel::bptry(
-#         eval(FUN, env = rlang::env(rlang::caller_env(), redo_list = redo_list))
-#       )
-#     errs <- sum(BiocParallel::bpok(out) == FALSE)
-#     redo <- errs > 0
-#     if (errs > 0) {
-#       ids <- which(BiocParallel::bpok(out) == FALSE)
-#     } else {
-#       ids <- vector()
-#     }
-#     cat(
-#       "    ", action,
-#       "     Trial:", trial,
-#       "     Errors:", errs,
-#       "     IDs:", ids,
-#       "\n"
-#     )
-#     if (redo) {
-#       redo_list <- out
-#       trial <- trial + 1
-#     }
-#   }
-#   out
-# }
 
-retry_parallel <- function(e, x, fun, log_file = NULL) {
-  foreach::foreach(i = 1:x, .export = ls(e)) %dopar% {
-    redo <- TRUE
-    trial <- 1
-    while(redo & trial <= 5) {
-      out <- try(eval(fun))
-      redo <- inherits(out, "try-error")
-      if (redo && !is.null(log_file)) {
-        cat(
-          "      X:", sprintf("%03d", i),
-          "      Trial:", trial,
-          "      Error:", redo,
-          "\n",
-          file = log_file,
-          append = TRUE
-        )
-      }
+retry_parallel <- function(fun) {
+  redo <- TRUE
+  trial <- 1
+  redo_list <- list()
+  while(redo & trial <= 5) {
+    out <-
+      BiocParallel::bptry(
+        eval(fun, env = rlang::env(rlang::caller_env(), redo_list = redo_list))
+      )
+    errs <- sum(BiocParallel::bpok(out) == FALSE)
+    redo <- errs > 0
+    if (errs > 0) {
+      ids <- which(BiocParallel::bpok(out) == FALSE)
+    } else {
+      ids <- vector()
+    }
+    cat(
+      "     Trial:", trial,
+      "     Errors:", sprintf("%3d", errs),
+      "     IDs:", ids,
+      "\n"
+    )
+    if (redo) {
+      redo_list <- out
       trial <- trial + 1
     }
     out
