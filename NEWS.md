@@ -1,10 +1,14 @@
-# IPO2 (development version)
+# IPO2 0.0.3
+
+* Add history to log file output in case of failed run.
+* Split sink output to both log file and console.
+* Increase grouping parameter bandwidth minimum to 1 (from 0.01) to increase processing speed.
 
 # IPO2 0.0.2
 
 * Reformat renaming of log files.
 * Handle peak scoring when no isotope peaks identified.
-* Transition from `BiocParallel` to `foreach` for parallel processing.
+* Combine all steps in optimization to return score only.
 
 # IPO2 0.0.1
 

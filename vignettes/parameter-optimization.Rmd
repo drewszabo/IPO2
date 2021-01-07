@@ -25,6 +25,7 @@ suppressPackageStartupMessages({
 
 # parallel processing
 doParallel::registerDoParallel(parallel::detectCores() - 1)
+register(BiocParallel::MulticoreParam(stop.on.error = FALSE))
 ```
 
 # Data Import
@@ -62,7 +63,7 @@ cwp_params <-
       log_file = paste0(system.file("scratch", package = "IPO2"), "/centwave_log.txt")
     ),
     file = "cwp_params.rds",
-    rerun = TRUE
+    rerun = FALSE
   )
 ```
 

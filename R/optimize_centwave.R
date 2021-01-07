@@ -26,13 +26,22 @@ optimize_centwave <- function(
   plot_dir = NULL
 ) {
 
+  # output
+  old_w <- getOption("width")
+  options(width = 1000)
+  on.exit(options(width = old_w), add = TRUE, after = TRUE)
+
+  max_print <- getOption("max.print")
+  options(max.print = 99999)
+  on.exit(options(max.print = max_print), add = TRUE, after = TRUE)
+
   # check parameters
   check_centwave_params(parameter_list)
 
   # log file
   if (!is.null(log_file)) {
-    log_file <- check_log_file(log_file)
-    sink(log_file, append = TRUE, type = "output")
+    log_file <- check_file(log_file)
+    sink(log_file, append = TRUE, type = "output", split = TRUE)
     on.exit(sink(), add = TRUE, after = TRUE)
   }
 
@@ -40,13 +49,6 @@ optimize_centwave <- function(
   if (!is.null(plot_dir)) {
     pd <- check_plot_dir(plot_dir, "centwave")
   }
-
-  # ensure serial processing
-  BiocParallel::register(BiocParallel::SerialParam())
-
-  # create environment
-  e <- new.env(parent = emptyenv())
-  e$raw_data <- raw_data
 
   # set up iteration loop
   history <- list()
@@ -67,34 +69,30 @@ optimize_centwave <- function(
     design <- design_experiments(parameters)
 
     # generate centWave parameters
-    e$cwp <-
+    cwp <-
       purrr::pmap(
         cbind(design, t(parameters$constant), t(parameters$lists)),
         make_cwp
       )
 
     # run xcms for each experiment
-    cat("    PEAK PICKING\n")
-    e$xcmsnexp <- retry_parallel(
-      e,
-      x = length(e$cwp),
-      rlang::expr(
-        xcms::findChromPeaks(
-          e$raw_data,
-          param = e$cwp[[i]],
-        )
-      ),
-      log_file = log_file
-    )
-
-    # score experiment
-    cat("    SCORING\n")
     score <- rbindlist(
       retry_parallel(
-        e,
-        x = length(e$xcmsnexp),
-        rlang::expr(score_peaks(e$xcmsnexp[[i]])),
-        log_file = log_file
+        rlang::expr(
+          BiocParallel::bplapply(
+            cwp,
+            function(x) {
+              score_peaks(
+                xcms::findChromPeaks(
+                  raw_data,
+                  param = x,
+                  BPPARAM = BiocParallel::SerialParam()
+                )
+              )
+            },
+            BPREDO = redo_list
+          )
+        )
       )
     )
 
@@ -112,19 +110,12 @@ optimize_centwave <- function(
     }
 
     # score best parameters
-    matched_row <- design[as.list(maximum), on = names(maximum), which = TRUE]
-
-    if(!is.na(matched_row)) {
-      max_score <- score[matched_row, ]
-      max_cwp <- e$cwp[matched_row]
-    } else {
-      max_cwp <- purrr::pmap(
-        data.table(t(maximum), t(parameters$constant), t(parameters$lists)),
-        make_cwp
-      )
-      max_xcmsnexp <- xcms::findChromPeaks(e$raw_data, param = max_cwp[[1]])
-      max_score <- score_peaks(max_xcmsnexp)
-    }
+    max_cwp <- purrr::pmap(
+      data.table(t(maximum), t(parameters$constant), t(parameters$lists)),
+      make_cwp
+    )
+    max_xcmsnexp <- xcms::findChromPeaks(raw_data, param = max_cwp[[1]], BPPARAM = BiocParallel::SerialParam())
+    max_score <- score_peaks(max_xcmsnexp)
 
     # assign to history
     history[[iteration]] <-
@@ -135,12 +126,16 @@ optimize_centwave <- function(
         max_score
       )
 
+    hx <- rbindlist(history)[, !c("cwp")]
+    end_cols <- c("total", "isotopes", "indeterminate", "score")
+    setcolorder(hx, order(setdiff(names(hx), end_cols)))
+
+    cat("\n")
+    capture.output(hx, file = log_file, append = TRUE)
+    cat("\n\n")
+
     # check for improvement
-    if (iteration == 1) {
-      better <- TRUE
-    } else {
-      better <- history[[iteration]][["score"]] > history[[iteration - 1]][["score"]]
-    }
+    better <- hx[[iteration, "score"]] == max(hx[["score"]])
 
     # adjust intervals
     if (better) {
@@ -157,6 +152,7 @@ optimize_centwave <- function(
 
   # output results
   history <- rbindlist(history)
+  setcolorder(history, order(setdiff(names(history), c(end_cols, cwp))))
   best_cwp <- history[score == max(score), cwp][[1]]
   list(history = history, best_cwp = best_cwp)
 

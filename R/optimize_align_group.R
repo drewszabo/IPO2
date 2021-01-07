@@ -25,6 +25,15 @@ optimize_align_group <- function(
   plot_dir = NULL
 ){
 
+  # output
+  old_w <- getOption("width")
+  options(width = 1000)
+  on.exit(options(width = old_w), add = TRUE, after = TRUE)
+
+  max_print <- getOption("max.print")
+  options(max.print = 99999)
+  on.exit(options(max.print = max_print), add = TRUE, after = TRUE)
+
   # check xcmsnexp
   if (nrow(xcmsnexp) <= 1) {
     stop("Not enough files for alignment")
@@ -37,8 +46,8 @@ optimize_align_group <- function(
 
   # log file
   if (!is.null(log_file)) {
-    log_file <- check_log_file(log_file)
-    sink(log_file, append = TRUE, type = "output")
+    log_file <- check_file(log_file)
+    sink(log_file, append = TRUE, type = "output", split = TRUE)
     on.exit(sink(), add = TRUE, after = TRUE)
   }
 
@@ -46,13 +55,6 @@ optimize_align_group <- function(
   if (!is.null(plot_dir)) {
     pd <- check_plot_dir(plot_dir, "align_group")
   }
-
-  # ensure serial processing
-  BiocParallel::register(BiocParallel::SerialParam())
-
-  # create environment
-  e <- new.env(parent = emptyenv())
-  e$xcmsnexp <- xcmsnexp
 
   # identify center sample
   dt <- data.table(xcms::chromPeaks(xcmsnexp), keep.rownames = TRUE)
@@ -84,61 +86,43 @@ optimize_align_group <- function(
     # generate obiwarp parameters
     align_params <- params[, colnames(params) %in% obi_params, with = FALSE]
     setnames(align_params, "binSize_O", "binSize")
-    e$obi <-
+    obi <-
       purrr::pmap(
         align_params,
         xcms::ObiwarpParam
       )
 
-    # run alignment
-    cat("    ALIGNING\n")
-    e$trial <- retry_parallel(
-      e,
-      x = length(e$obi),
-      rlang::expr(
-        xcms::adjustRtime(
-          e$xcmsnexp,
-          param = e$obi[[i]],
-        )
-      ),
-      log_file = log_file
-    )
-
     # generate density parameters
     group_params <- params[, colnames(params) %in% density_params, with = FALSE]
     setnames(group_params, "binSize_D", "binSize")
-    e$density <-
+    density <-
       purrr::pmap(
         group_params,
         xcms::PeakDensityParam
       )
 
-    # run grouping
-    cat("    GROUPING\n")
-    e$trial <- retry_parallel(
-      e,
-      x = length(e$density),
-      # x = list(
-      #   aligned = aligned,
-      #   density = density
-      # ),
-      rlang::expr(
-        xcms::groupChromPeaks(
-          e$trial[[i]],
-          param = e$density[[i]]
-        )
-      ),
-      log_file = log_file
-    )
-
-    # score
-    cat("    SCORING\n")
+    # run alignment
     score <- rbindlist(
       retry_parallel(
-        e,
-        x = length(e$trial),
-        rlang::expr(score_align_group(e$trial[[i]])),
-        log_file = log_file
+        rlang::expr(
+          BiocParallel::bpmapply(
+            function(x, y) {
+              BiocParallel::register(BiocParallel::SerialParam())
+              xcms::adjustRtime(
+                xcmsnexp,
+                param = x
+              ) %>%
+                xcms::groupChromPeaks(
+                  param = y
+                ) %>%
+                score_align_group()
+            },
+            x = obi,
+            y = density,
+            BPREDO = redo_list,
+            SIMPLIFY = FALSE
+          )
+        )
       )
     )
 
@@ -162,33 +146,24 @@ optimize_align_group <- function(
     }
 
     # score best parameters
-    matched_row <- design[as.list(maximum), on = names(maximum), which = TRUE]
+    align_params <- max_params[names(max_params) %in% obi_params]
+    names(align_params)[names(align_params) == "binSize_O"] <- "binSize"
+    max_obi <- purrr::pmap(
+      data.table(t(align_params)),
+      xcms::ObiwarpParam
+    )
 
-    if(!is.na(matched_row)) {
-      max_score <- score[matched_row, ]
-      max_obi <- obi[matched_row]
-      max_density <- density[matched_row]
-    } else {
-      align_params <- max_params[names(max_params) %in% obi_params]
-      names(align_params)[names(align_params) == "binSize_O"] <- "binSize"
-      max_obi <- purrr::pmap(
-        data.table(t(align_params)),
-        xcms::ObiwarpParam
-      )
+    group_params <- max_params[names(max_params) %in% density_params]
+    names(group_params)[names(group_params) == "binSize_D"] <- "binSize"
+    max_density <- purrr::pmap(
+      data.table(t(group_params)),
+      xcms::PeakDensityParam
+    )
 
-      group_params <- max_params[names(max_params) %in% density_params]
-      names(group_params)[names(group_params) == "binSize_D"] <- "binSize"
-      max_density <- purrr::pmap(
-        data.table(t(group_params)),
-        xcms::PeakDensityParam
-      )
-
-      max_xcmsnexp <- xcms::adjustRtime(xcmsnexp, param = max_obi[[1]])
-      max_xcmsnexp <- xcms::groupChromPeaks(xcmsnexp, param = max_density[[1]])
-
-      max_score <- score_align_group(max_xcmsnexp)
-
-    }
+    max_score <-
+      xcms::adjustRtime(xcmsnexp, param = max_obi[[1]]) %>%
+      xcms::groupChromPeaks(param = max_density[[1]]) %>%
+      score_align_group()
 
     # assign to history
     history[[iteration]] <-
@@ -200,14 +175,20 @@ optimize_align_group <- function(
         unlist(max_score)
       )
 
+    hx <- rbindlist(history)[, !c("obi", "density")]
+    end_cols <- c("rcs", "good", "bad", "gs")
+    setcolorder(hx, order(setdiff(names(hx), end_cols)))
+    hx[, c("rcs_adj", "gs_adj") := lapply(.SD, scales::rescale, to = c(0, 1)), .SDcols = c("rcs", "gs")
+    ][
+      , score := rcs_adj + gs_adj
+    ]
+
+    cat("\n")
+    capture.output(hx, file = log_file, append = TRUE)
+    cat("\n\n")
+
     # check for improvement
-    if (iteration == 1) {
-      better <- TRUE
-    } else {
-      better <-
-        history[[iteration]][["rcs"]] > history[[iteration - 1]][["rcs"]] |
-        history[[iteration]][["gs"]] > history[[iteration - 1]][["gs"]]
-    }
+    better <- hx[[iteration, "score"]] == max(hx[["score"]])
 
     # adjust intervals
     if (better) {
@@ -224,10 +205,11 @@ optimize_align_group <- function(
 
   # output results
   history <- rbindlist(history)
-  history[, c("rcs", "gs") := lapply(.SD, scales::rescale, to = c(0, 1)), .SDcols = c("rcs", "gs")
+  history[, c("rcs_adj", "gs_adj") := lapply(.SD, scales::rescale, to = c(0, 1)), .SDcols = c("rcs", "gs")
   ][
-    , score := rcs + gs
+    , score := rcs_adj + gs_adj
   ]
+  setcolorder(history, order(setdiff(names(history), c(end_cols, obi, density))))
   best_obi <- history[score == max(score), obi][[1]]
   best_density <- history[score == max(score), density][[1]]
   list(history = history, best_obi = best_obi, best_density = best_density)
