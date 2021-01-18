@@ -8,7 +8,7 @@ check_file <- function(filename) {
       dirname(filename),
       "/",
       sub("\\.txt$", "", basename(filename)),
-      format(Sys.time(), "_%Y-%m-%d_%H:%M:%S.txt")
+      format(Sys.time(), "_%Y-%m-%d-%H-%M-%S.txt")
     )
   } else {
     filename
@@ -25,7 +25,7 @@ check_plot_dir <- function(plot_dir, folder_name) {
   if (!dir.exists(plot_folder)) {
     dir.create(plot_folder)
   } else {
-    stamp <- format(Sys.time(), "_%Y-%m-%d_%H:%M:%S")
+    stamp <- format(Sys.time(), "_%Y-%m-%d-%H-%M-%S")
     plot_folder <- paste0(plot_dir, "/", folder_name, stamp, "/")
     dir.create(plot_folder)
   }
