@@ -6,8 +6,7 @@
 #'
 #' @param raw_data MSnExp object containing the raw data
 #' @param parameter_list List of parameters to set or to optimize
-#' @param log_file Path for log file
-#' @param plot_dir Path for plot directory
+#' @param out_dir Path for output directory. Defaults to working directory.
 #'
 #' @return A list of length 2 containing:
 #' \describe{
@@ -22,9 +21,13 @@
 optimize_centwave <- function(
   raw_data = NULL,
   parameter_list = suggest_centwave_params(),
-  log_file = NULL,
-  plot_dir = NULL
+  out_dir = NULL
 ) {
+
+  # prepare output
+  prepare_out_dir(out_dir = out_dir, fun_name = "centwave")
+  sink(log_file, append = TRUE, type = "output", split = TRUE)
+  on.exit(sink(), add = TRUE, after = TRUE)
 
   # output
   old_w <- getOption("width")
@@ -37,18 +40,6 @@ optimize_centwave <- function(
 
   # check parameters
   check_centwave_params(parameter_list)
-
-  # log file
-  if (!is.null(log_file)) {
-    log_file <- check_file(log_file)
-    sink(log_file, append = TRUE, type = "output", split = TRUE)
-    on.exit(sink(), add = TRUE, after = TRUE)
-  }
-
-  # plot file
-  if (!is.null(plot_dir)) {
-    pd <- check_plot_dir(plot_dir, "centwave")
-  }
 
   # set up iteration loop
   history <- list()
@@ -103,11 +94,9 @@ optimize_centwave <- function(
     maximum <- get_maximum(design, model)
 
     # make plots
-    if (!is.null(plot_dir)) {
-      plot_name <-
-        paste0(pd, "centwave_contour_", sprintf("%02d", iteration), ".png")
-      plot_contours(design, model, maximum, plot_name)
-    }
+    plot_name <-
+      paste0(dir, "/contour_centwave_", sprintf("%02d", iteration), ".png")
+    plot_contours(design, model, maximum, plot_name)
 
     # score best parameters
     max_cwp <- purrr::pmap(

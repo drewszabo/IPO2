@@ -2,35 +2,19 @@
   match(x, table, nomatch = 0L) == 0L
 }
 
-check_file <- function(filename) {
-  if (file.exists(filename)) {
-    paste0(
-      dirname(filename),
-      "/",
-      sub("\\.txt$", "", basename(filename)),
-      format(Sys.time(), "_%Y-%m-%d-%H-%M-%S.txt")
-    )
-  } else {
-    filename
-  }
-}
+prepare_out_dir <- function(out_dir = NULL, fun_name) {
 
-check_plot_dir <- function(plot_dir, folder_name) {
-
-  if (!dir.exists(plot_dir)) {
-    stop("The plot directory, ", plot_dir, " does not exist")
+  if (is.null(out_dir)) out_dir <- getwd()
+  if(!dir.exists(out_dir)) {
+    cat("Creating", out_dir, "\n")
+    dir.create(out_dir, recursive = TRUE)
   }
 
-  plot_folder <- paste0(plot_dir, "/", folder_name, "/")
-  if (!dir.exists(plot_folder)) {
-    dir.create(plot_folder)
-  } else {
-    stamp <- format(Sys.time(), "_%Y-%m-%d-%H-%M-%S")
-    plot_folder <- paste0(plot_dir, "/", folder_name, stamp, "/")
-    dir.create(plot_folder)
-  }
+  dir <- paste0(out_dir, "/", fun_name, format(Sys.time(), "_%Y-%m-%d-%H-%M-%S"))
 
-  plot_folder
+  dir.create(dir)
+  assign("dir", paste0(dir, "/"), envir = parent.frame())
+  assign("log_file", paste0(dir, "/log_file.txt"), envir = parent.frame())
 
 }
 

@@ -5,8 +5,7 @@
 #'
 #' @param xcmsnexp An XCMSnExp object
 #' @param parameter_list List of parameters to set or to optimize
-#' @param log_file Path for log file
-#' @param plot_dir Path for plot directory
+#' @param out_dir Path for output directory. Defaults to working directory.
 #'
 #' @return A list of length 3 containing:
 #' \describe{
@@ -21,9 +20,13 @@
 optimize_align_group <- function(
   xcmsnexp = NULL,
   parameter_list = suggest_align_group_params(),
-  log_file = NULL,
-  plot_dir = NULL
+  out_dir = NULL
 ){
+
+  # prepare output
+  prepare_out_dir(out_dir = out_dir, fun_name = "align-group")
+  sink(log_file, append = TRUE, type = "output", split = TRUE)
+  on.exit(sink(), add = TRUE, after = TRUE)
 
   # output
   old_w <- getOption("width")
@@ -43,18 +46,6 @@ optimize_align_group <- function(
   check_align_group_params(parameter_list)
   obi_params <- names(get_obiwarp_defaults())
   density_params <- names(get_density_defaults())
-
-  # log file
-  if (!is.null(log_file)) {
-    log_file <- check_file(log_file)
-    sink(log_file, append = TRUE, type = "output", split = TRUE)
-    on.exit(sink(), add = TRUE, after = TRUE)
-  }
-
-  # plot file
-  if (!is.null(plot_dir)) {
-    pd <- check_plot_dir(plot_dir, "align_group")
-  }
 
   # identify center sample
   dt <- data.table(xcms::chromPeaks(xcmsnexp), keep.rownames = TRUE)
@@ -139,11 +130,9 @@ optimize_align_group <- function(
     max_params <- c(maximum, parameters$constant, parameters$lists)
 
     # make plots
-    if (!is.null(plot_dir)) {
-      plot_name <-
-        paste0(pd, "align_group_contour_", sprintf("%02d", iteration), ".png")
-      plot_contours(design, model, maximum, plot_name)
-    }
+    plot_name <-
+      paste0(dir, "/contour_align-group_", sprintf("%02d", iteration), ".png")
+    plot_contours(design, model, maximum, plot_name)
 
     # score best parameters
     align_params <- max_params[names(max_params) %in% obi_params]
