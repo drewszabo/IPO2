@@ -28,15 +28,6 @@ optimize_align_group <- function(
   sink(log_file, append = TRUE, type = "output", split = TRUE)
   on.exit(sink(), add = TRUE, after = TRUE)
 
-  # output
-  old_w <- getOption("width")
-  options(width = 1000)
-  on.exit(options(width = old_w), add = TRUE, after = TRUE)
-
-  max_print <- getOption("max.print")
-  options(max.print = 99999)
-  on.exit(options(max.print = max_print), add = TRUE, after = TRUE)
-
   # check xcmsnexp
   if (nrow(xcmsnexp) <= 1) {
     stop("Not enough files for alignment")
@@ -172,9 +163,9 @@ optimize_align_group <- function(
       , score := rcs_adj + gs_adj
     ]
 
+    fwrite(hx, paste0(dir, "/history.csv"), row.names = TRUE)
+
     cat("\n")
-    capture.output(hx, file = log_file, append = TRUE)
-    cat("\n\n")
 
     # check for improvement
     better <- hx[[iteration, "score"]] == max(hx[["score"]])
