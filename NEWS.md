@@ -1,3 +1,8 @@
+# IPO2 0.0.4
+
+* Mandatory output in working directly by default.
+* Save history as `.csv` file. 
+
 # IPO2 0.0.3
 
 * Add history to log file output in case of failed run.

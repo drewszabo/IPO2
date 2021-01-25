@@ -3,4 +3,4 @@
 export(optimize_align_group)
 export(optimize_centwave)
 import(data.table)
-importFrom(foreach,"%dopar%")
+importFrom(magrittr,"%>%")

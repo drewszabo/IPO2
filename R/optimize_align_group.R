@@ -16,12 +16,22 @@
 #' @export
 #'
 #' @examples
+#' \dontrun{
+#' files <- list.files(system.file("extdata", package = "IPO2"), full.names = TRUE)
+#' raw_data <-
+#'   MSnbase::readMSData(files = files, mode = "onDisk") %>%
+#'   MSnbase::filterRt(c(300, 900))
+#' xcmsnexp <- xcms::findChromPeaks(raw_data, param = cwp_params$best_cwp)
+#' align_group_params <- optimize_align_group(xcmsnexp = xcmsnexp)
+#' }
 #'
 optimize_align_group <- function(
   xcmsnexp = NULL,
   parameter_list = suggest_align_group_params(),
   out_dir = NULL
 ){
+
+  log_file <- intb <- V1 <- redo_list <- rcs <- gs <- rcs_adj <- gs_adj <- NULL
 
   # prepare output
   prepare_out_dir(out_dir = out_dir, fun_name = "align-group")
@@ -40,7 +50,7 @@ optimize_align_group <- function(
 
   # identify center sample
   dt <- data.table(xcms::chromPeaks(xcmsnexp), keep.rownames = TRUE)
-  idx_sample <- dt[, median(intb, na.rm = TRUE), by = sample][, which.max(V1)]
+  idx_sample <- dt[, stats::median(intb, na.rm = TRUE), by = sample][, which.max(V1)]
   parameter_list$centerSample <- idx_sample
   if (is.null(parameter_list$sampleGroups)) {
     parameter_list$sampleGroups <- rep(1, length(unique(unlist(dt$sample))))
@@ -280,6 +290,8 @@ param_types_align_group <- function() {
 }
 
 check_align_group_params <- function(parameter_list) {
+
+  quant <- qual <- lists <- NULL
 
   param_types_align_group()
 

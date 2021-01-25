@@ -7,8 +7,7 @@
 optimize_align_group(
   xcmsnexp = NULL,
   parameter_list = suggest_align_group_params(),
-  log_file = NULL,
-  plot_dir = NULL
+  out_dir = NULL
 )
 }
 \arguments{
@@ -16,9 +15,7 @@ optimize_align_group(
 
 \item{parameter_list}{List of parameters to set or to optimize}
 
-\item{log_file}{Path for log file}
-
-\item{plot_dir}{Path for plot directory}
+\item{out_dir}{Path for output directory. Defaults to working directory.}
 }
 \value{
 A list of length 3 containing:
@@ -33,5 +30,13 @@ A list of length 3 containing:
 the ObiWarp algorithm and for \code{xcms::groupChromPeaks} using peak densities.
 }
 \examples{
+\dontrun{
+files <- list.files(system.file("extdata", package = "IPO2"), full.names = TRUE)
+raw_data <-
+  MSnbase::readMSData(files = files[seq(2, 18, 3)], mode = "onDisk") \%>\%
+  MSnbase::filterRt(c(300, 900))
+xcmsnexp <- xcms::findChromPeaks(raw_data, param = cwp_params$best_cwp)
+align_group_params <- optimize_align_group(xcmsnexp = xcmsnexp)
+}
 
 }

@@ -1,5 +1,5 @@
 #' @import data.table
-#' @importFrom foreach %dopar%
+#' @importFrom magrittr %>%
 
 #' @keywords internal
 "_PACKAGE"

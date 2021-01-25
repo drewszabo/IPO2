@@ -24,7 +24,6 @@ suppressPackageStartupMessages({
 })
 
 # parallel processing
-doParallel::registerDoParallel(parallel::detectCores() - 1)
 register(BiocParallel::MulticoreParam(stop.on.error = FALSE))
 ```
 
@@ -45,25 +44,9 @@ raw_data <-
 # Optimize Peak Picking
 
 ```{r}
-# cleanup
-unlink(
-  list.files(
-    system.file("scratch", package = "IPO2"), 
-    c("centwave"), 
-    full.names = TRUE
-  ), 
-  recursive = TRUE
-)
-
-cwp_params <-
-  xfun::cache_rds(
-    optimize_centwave(
-      raw_data = raw_data,
-      plot_dir = system.file("scratch", package = "IPO2"),
-      log_file = paste0(system.file("scratch", package = "IPO2"), "/centwave_log.txt")
-    ),
-    file = "cwp_params.rds",
-    rerun = FALSE
+cwp_params <- 
+  optimize_centwave(
+    raw_data = raw_data
   )
 ```
 
@@ -77,37 +60,16 @@ raw_data <-
 
 ```{r}
 xcmsnexp <- 
-  xfun::cache_rds(
-    xcms::findChromPeaks(
-      raw_data,
-      param = cwp_params$best_cwp,
-      BPPARAM = BiocParallel::SerialParam(),
-    ), 
-    file = "xcmsnexp.rds", 
-    rerun = FALSE
+  xcms::findChromPeaks(
+    raw_data,
+    param = cwp_params$best_cwp
   )
 ```
 
 ```{r}
-# cleanup
-unlink(
-  list.files(
-    system.file("scratch", package = "IPO2"), 
-    c("align_group"), 
-    full.names = TRUE
-  ), 
-  recursive = TRUE
-)
-
 align_group_params <-
-  xfun::cache_rds(
-    optimize_align_group(
-      xcmsnexp = xcmsnexp,
-      plot_dir = system.file("scratch", package = "IPO2"),
-      log_file = paste0(system.file("scratch", package = "IPO2"), "/align_group_log.txt")
-    ), 
-    file = "align_group_params.rds",
-    rerun = TRUE
+  optimize_align_group(
+    xcmsnexp = xcmsnexp
   )
 ```
 

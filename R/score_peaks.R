@@ -1,4 +1,7 @@
 score_peaks <- function(xcmsnexp) {
+
+  total <- peak_tables <- isotope_list <- indeterminate <- isotopes <- score <- NULL
+
   peak_df <- data.table(xcms::chromPeaks(xcmsnexp), keep.rownames = TRUE)
 
   if (nrow(peak_df) == 0) {
@@ -45,6 +48,8 @@ score_peaks <- function(xcmsnexp) {
 
 
 find_isotopes <- function(peak_table) {
+
+  id <- NULL
 
   peak_table <- peak_table[order(peak_table$mz)]
 
@@ -115,11 +120,13 @@ maximize_carbons <- function(mass) {
 
 predict_isotope_ratio <- function(carbons) {
   C13_abundance <- 0.0107
-  dbinom(1, carbons, C13_abundance) / dbinom(0, carbons, C13_abundance)
+  stats::dbinom(1, carbons, C13_abundance) / stats::dbinom(0, carbons, C13_abundance)
 }
 
 
 find_indeterminate_peaks <- function(peak_tbl, isotope_list) {
+
+  intb <- NULL
 
   no_isotopes <- peak_tbl[peak_tbl$rn %nin% isotope_list, ]
 

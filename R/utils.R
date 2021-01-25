@@ -23,6 +23,8 @@ parse_parameters <- function(
   method = c("centwave", "align_group")
 ) {
 
+  quant <- qual <- lists <- NULL
+
   default_params <- switch(
     method,
     "centwave" = {
@@ -66,7 +68,7 @@ generate_ccd <- function(parameters_to_optimize) {
     center
   )
 
-  formulas <- lapply(x, as.formula)
+  formulas <- lapply(x, stats::as.formula)
 
   rsm::ccd(
     length(parameters_to_optimize),  # number of variables
@@ -81,6 +83,8 @@ generate_ccd <- function(parameters_to_optimize) {
 
 
 design_experiments <- function(parameters) {
+
+  run.order <- std.order <- Block <- NULL
 
   if(length(parameters$to_optimize) > 1) {
     design <- generate_ccd(parameters$to_optimize)
@@ -105,11 +109,11 @@ create_model <- function(design, score) {
   design <- cbind(design, score = score$score)
 
   if(ncol(design) > 1) {
-    formula <- as.formula(paste0("score ~ SO(", params, ")"))
+    formula <- stats::as.formula(paste0("score ~ SO(", params, ")"))
     model <- rsm::rsm(formula, data = design)
   } else {
-    formula <- as.formula(paste("score ~", params, "+", params, "^ 2"))
-    model <- lm(formula, data = design)
+    formula <- stats::as.formula(paste("score ~", params, "+", params, "^ 2"))
+    model <- stats::lm(formula, data = design)
   }
 
   model
@@ -130,7 +134,7 @@ get_maximum <- function(design, model) {
   }
 
   search_grid <- do.call(CJ, param_values)
-  max_value <- predict(model, search_grid)
+  max_value <- stats::predict(model, search_grid)
   unlist(search_grid[max_value == max(max_value), ][1, ])
 
 }
@@ -139,7 +143,7 @@ get_maximum <- function(design, model) {
 plot_contours <- function(design, model, maximum, plot_name) {
 
   # make formula
-  form <- as.formula(
+  form <- stats::as.formula(
     paste("~ ", paste(colnames(design), collapse = " + "))
   )
 
@@ -153,7 +157,7 @@ plot_contours <- function(design, model, maximum, plot_name) {
   cols <- number_columns[which(number_params == params)]
   rows <- number_rows[which(number_params == params)]
 
-  png(
+  grDevices::png(
     plot_name,
     width = cols * 4,
     height = rows * 4,
@@ -161,11 +165,11 @@ plot_contours <- function(design, model, maximum, plot_name) {
     res = 300
   )
 
-  par(mfrow = c(rows, cols))
+  graphics::par(mfrow = c(rows, cols))
 
   # plot
-  contour(model, form = form, image = TRUE, at = maximum)
-  dev.off()
+  graphics::contour(model, form = form, image = TRUE, at = maximum)
+  grDevices::dev.off()
 
 }
 
@@ -241,7 +245,7 @@ retry_parallel <- function(fun) {
   while(redo & trial <= 5) {
     out <-
       BiocParallel::bptry(
-        eval(fun, env = rlang::env(rlang::caller_env(), redo_list = redo_list))
+        eval(fun, envir = rlang::env(rlang::caller_env(), redo_list = redo_list))
       )
     errs <- sum(BiocParallel::bpok(out) == FALSE)
     redo <- errs > 0

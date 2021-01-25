@@ -7,8 +7,7 @@
 optimize_centwave(
   raw_data = NULL,
   parameter_list = suggest_centwave_params(),
-  log_file = NULL,
-  plot_dir = NULL
+  out_dir = NULL
 )
 }
 \arguments{
@@ -16,9 +15,7 @@ optimize_centwave(
 
 \item{parameter_list}{List of parameters to set or to optimize}
 
-\item{log_file}{Path for log file}
-
-\item{plot_dir}{Path for plot directory}
+\item{out_dir}{Path for output directory. Defaults to working directory.}
 }
 \value{
 A list of length 2 containing:
@@ -33,6 +30,12 @@ optimizing the identification of isotope pairs. Note that currently the
 isotope identification algorithm relies on high resolution m/\emph{z} measurements.
 }
 \examples{
-
+\dontrun{
+files <- list.files(system.file("extdata", package = "IPO2"), full.names = TRUE)
+raw_data <-
+  MSnbase::readMSData(files = files[[1]], mode = "onDisk") \%>\%
+  MSnbase::filterRt(c(300, 900))
+cwp_params <- optimize_centwave(raw_data = raw_data)
+}
 
 }

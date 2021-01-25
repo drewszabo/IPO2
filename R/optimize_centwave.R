@@ -16,13 +16,21 @@
 #' @export
 #'
 #' @examples
-#'
+#' \dontrun{
+#' files <- list.files(system.file("extdata", package = "IPO2"), full.names = TRUE)
+#' raw_data <-
+#'   MSnbase::readMSData(files = files[[1]], mode = "onDisk") %>%
+#'   MSnbase::filterRt(c(300, 900))
+#' cwp_params <- optimize_centwave(raw_data = raw_data)
+#' }
 #'
 optimize_centwave <- function(
   raw_data = NULL,
   parameter_list = suggest_centwave_params(),
   out_dir = NULL
 ) {
+
+  log_file <- redo_list <- NULL
 
   # prepare output
   prepare_out_dir(out_dir = out_dir, fun_name = "centwave")
@@ -216,6 +224,8 @@ param_types_centwave <- function() {
 
 
 check_centwave_params <- function(parameter_list) {
+
+  quant <- qual <- lists <- NULL
 
   param_types_centwave()
 

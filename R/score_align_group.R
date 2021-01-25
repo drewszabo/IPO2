@@ -11,7 +11,7 @@ score_align_group <- function(xcmsnexp) {
   # score rt deviation
   rt_shift <-
     lapply(f_defs$peakidx, function(x) {
-      sum(abs(median(peaks[x, "rt"]) - peaks[x, "rt"])) / length(x)
+      sum(abs(stats::median(peaks[x, "rt"]) - peaks[x, "rt"])) / length(x)
     })
 
   rcs <- length(rt_shift) / sum(unlist(rt_shift))
