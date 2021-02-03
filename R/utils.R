@@ -55,7 +55,7 @@ generate_ccd <- function(parameters_to_optimize) {
 
   lower_bound <- sapply(parameters_to_optimize, "[[", 1)
   upper_bound <- sapply(parameters_to_optimize, "[[", 2)
-  center <- (upper_bound - lower_bound) / 2
+  half_width <- (upper_bound - lower_bound) / 2
 
   x <- paste0(
     "x",
@@ -63,9 +63,9 @@ generate_ccd <- function(parameters_to_optimize) {
     " ~ (",
     c(names(parameters_to_optimize)),
     " - ",
-    (lower_bound + center),
+    (lower_bound + half_width),
     ") / ",
-    center
+    half_width
   )
 
   formulas <- lapply(x, stats::as.formula)
