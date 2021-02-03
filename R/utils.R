@@ -181,7 +181,7 @@ pick_parameters <- function(parameters, maximum) {
   params <- list()
 
   boundaries <- list(
-    ppm = c(0, Inf, 2),
+    ppm = c(0.5, Inf, 2),
     min_peakwidth = c(0, Inf, 2),
     max_peakwidth = c(0, Inf, 2),
     snthresh = c(0, Inf, 0),
