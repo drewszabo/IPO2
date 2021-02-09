@@ -184,7 +184,7 @@ pick_parameters <- function(parameters, maximum) {
     ppm = c(0.5, Inf, 2),
     min_peakwidth = c(0, Inf, 2),
     max_peakwidth = c(0, Inf, 2),
-    snthresh = c(0, Inf, 0),
+    snthresh = c(3, Inf, 0),
     noise = c(0, Inf, 0),
     prefilter_k = c(0, Inf, 0),
     prefilter_int = c(0, Inf, 0),
