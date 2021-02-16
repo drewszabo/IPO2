@@ -19,7 +19,7 @@ score_align_group <- function(xcmsnexp) {
   # score grouping quality
   f_summary <- xcms::featureSummary(xcmsnexp)
 
-  good <- sum(f_summary[, "perc"] == 100 & f_summary[, "multi_perc"] == 100)
+  good <- sum(f_summary[, "perc"] == 100 & f_summary[, "multi_perc"] == 0)
   bad <- nrow(f_summary) - good
 
   gs <- good ^ 2 / bad
