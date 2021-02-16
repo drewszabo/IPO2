@@ -178,7 +178,9 @@ optimize_align_group <- function(
     cat("\n")
 
     # check for improvement
-    better <- hx[[iteration, "score"]] == max(hx[["score"]])
+    better <-
+      hx[[iteration, "rcs"]] == max(hx[["rcs"]]) ||
+      hx[[iteration, "gs"]] == max(hx[["gs"]])
 
     # adjust intervals
     if (better) {
