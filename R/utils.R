@@ -104,20 +104,27 @@ design_experiments <- function(parameters) {
 
 
 create_model <- function(design, score) {
+  # Remove invalid scores
+  valid_rows <- is.finite(score$score)
+  design <- design[valid_rows, , drop = FALSE]
+  score <- score[valid_rows, , drop = FALSE]
+
+  if (nrow(design) == 0) {
+    stop("All score entries are NA/NaN/Inf — cannot build model.")
+  }
 
   params <- paste0(colnames(design), collapse = ", ")
   design <- cbind(design, score = score$score)
 
-  if(ncol(design) > 1) {
+  if (ncol(design) > 1) {
     formula <- stats::as.formula(paste0("score ~ SO(", params, ")"))
     model <- rsm::rsm(formula, data = design)
   } else {
-    formula <- stats::as.formula(paste("score ~", params, "+", params, "^ 2"))
+    formula <- stats::as.formula(paste("score ~", params, "+", params, "^2"))
     model <- stats::lm(formula, data = design)
   }
 
   model
-
 }
 
 
