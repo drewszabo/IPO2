@@ -3,7 +3,7 @@ score_align_group <- function(xcmsnexp) {
   f_defs <- xcms::featureDefinitions(xcmsnexp)
 
   if (nrow(f_defs) == 0) {
-    return(list(rcs = 0, good = 0, bad = 0, gs = 0))
+    return(data.table::data.table(rcs = 0, good = 0, bad = 0, gs = 0))
   }
 
   peaks <- xcms::chromPeaks(xcmsnexp)
@@ -24,6 +24,5 @@ score_align_group <- function(xcmsnexp) {
 
   gs <- good ^ 2 / bad
 
-  list(rcs = rcs, good = good, bad = bad, gs = gs)
-
+  data.table::data.table(rcs = rcs, good = good, bad = bad, gs = gs)
 }
