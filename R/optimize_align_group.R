@@ -99,25 +99,28 @@ optimize_align_group <- function(
         rlang::expr(
           BiocParallel::bpmapply(
             function(x, y) {
-  BiocParallel::register(BiocParallel::SerialParam())
-  result <- xcms::adjustRtime(xcmsnexp, param = x) %>%
-    xcms::groupChromPeaks(param = y) %>%
-    score_align_group()
+                BiocParallel::register(BiocParallel::SerialParam())
+                result <- tryCatch({
+                  xcms::adjustRtime(xcmsnexp, param = x) %>%
+                  xcms::groupChromPeaks(param = y) %>%
+                  score_align_group()
+                }, error = function(e) {
+                  message("Error in score_align_group: ", conditionMessage(e))
+                  return(list(rcs = NA_real_, good = NA_real_, bad = NA_real_, gs = NA_real_))
+                })
 
-  # Ensure consistent format
-  result <- data.table::as.data.table(result)
+                print(result)  # Add this for debugging structure before conversion
 
-  # Guarantee all expected columns are present
-  required_cols <- c("rcs", "good", "bad", "gs")
-  missing_cols <- setdiff(required_cols, names(result))
-  for (col in missing_cols) result[[col]] <- NA_real_
+                # Ensure proper structure
+                if (!is.list(result) || !all(c("rcs", "good", "bad", "gs") %in% names(result))) {
+                result <- list(rcs = NA_real_, good = NA_real_, bad = NA_real_, gs = NA_real_)
+                }
 
-  result <- result[, ..required_cols]
+              result <- data.table::as.data.table(result)
 
-  # Optional: print for debugging
-  print(sprintf("Returned columns: %s", paste(names(result), collapse = ", ")))
-  result
-},
+              result
+              
+              },
             x = obi,
             y = density,
             BPREDO = redo_list,
