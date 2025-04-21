@@ -99,16 +99,25 @@ optimize_align_group <- function(
         rlang::expr(
           BiocParallel::bpmapply(
             function(x, y) {
-              BiocParallel::register(BiocParallel::SerialParam())
-              xcms::adjustRtime(
-                xcmsnexp,
-                param = x
-              ) %>%
-                xcms::groupChromPeaks(
-                  param = y
-                ) %>%
-                score_align_group()
-            },
+  BiocParallel::register(BiocParallel::SerialParam())
+  result <- xcms::adjustRtime(xcmsnexp, param = x) %>%
+    xcms::groupChromPeaks(param = y) %>%
+    score_align_group()
+
+  # Ensure consistent format
+  result <- data.table::as.data.table(result)
+
+  # Guarantee all expected columns are present
+  required_cols <- c("rcs", "good", "bad", "gs")
+  missing_cols <- setdiff(required_cols, names(result))
+  for (col in missing_cols) result[[col]] <- NA_real_
+
+  result <- result[, ..required_cols]
+
+  # Optional: print for debugging
+  print(sprintf("Returned columns: %s", paste(names(result), collapse = ", ")))
+  result
+},
             x = obi,
             y = density,
             BPREDO = redo_list,
